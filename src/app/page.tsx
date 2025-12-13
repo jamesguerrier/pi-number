@@ -1,28 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format, subDays } from "date-fns";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { findNumberInData, getEnglishDayName } from "@/lib/data";
-import { getPreviousWeekDates, getDayNameFromDate } from "@/lib/dateUtils";
+import { getPreviousWeekDates } from "@/lib/dateUtils";
 
 type MatchingResult = {
   category: string;
   subCategory: string;
   days: Record<string, number[]>;
-};
-
-type WeekData = {
-  weekNumber: number;
-  start: Date;
-  end: Date;
-  label: string;
 };
 
 type UserAnswer = {
@@ -45,7 +38,6 @@ export default function Home() {
   const [currentInputIndex, setCurrentInputIndex] = useState<number>(0);
   const [currentWeekIndex, setCurrentWeekIndex] = useState<number>(0);
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
-  const [weekDates, setWeekDates] = useState<WeekData[]>([]);
   const [weekUserNumbers, setWeekUserNumbers] = useState<string[]>(["", "", ""]);
   const [finalResults, setFinalResults] = useState<string[]>([]);
 
@@ -222,9 +214,6 @@ export default function Home() {
 
   const resetAnalysis = () => {
     setNumbers(["", "", "", "", "", ""]);
-    setMatchingResultsI need to continue and complete the file since it was cut off:
-
-<dyad-write path="src/app/page.tsx" description="Completing the main page component">
     setMatchingResults([]);
     setUserAnswers([]);
     setFinalResults([]);
@@ -378,7 +367,7 @@ export default function Home() {
                     </Button>
                   </div>
 
-                  {/* Number inputs for YES answer - Show immediately when user clicks YES */}
+                  {/* Number inputs for YES answer - Show only if answer is 'yes' and we are still in the current week/input */}
                   {userAnswers[currentInputIndex]?.weekAnswers[currentWeekIndex]?.answer === 'yes' && (
                     <div className="space-y-4 p-4 bg-green-50 rounded-lg">
                       <h4 className="font-semibold text-gray-800">Enter the 3 numbers you see:</h4>
@@ -398,7 +387,7 @@ export default function Home() {
                       </div>
                       <Button 
                         onClick={() => {
-                          // After entering numbers, move to next week
+                          // Logic to move to next step after entering numbers
                           if (currentWeekIndex < 3) {
                             setCurrentWeekIndex(currentWeekIndex + 1);
                             setWeekUserNumbers(["", "", ""]);
