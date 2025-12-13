@@ -130,8 +130,8 @@ export default function Home() {
     const days = Object.keys(firstResult.days);
     if (days.length < 2) return;
     
-    // Calculate dates for this week
-    const weekDates = getPreviousWeekDates(date, days[0], days[1], currentWeekIndex + 1);
+    // Calculate dates for this week (using currentWeekIndex: 0 for current week, 1 for 1 week back, etc.)
+    const weekDates = getPreviousWeekDates(date, days[0], days[1], currentWeekIndex);
     
     if (!currentAnswer.weekAnswers[currentWeekIndex]) {
       currentAnswer.weekAnswers[currentWeekIndex] = {
@@ -215,8 +215,8 @@ export default function Home() {
     const day1 = getEnglishDayName(days[0]);
     const day2 = getEnglishDayName(days[1]);
     
-    // Calculate dates for current week
-    const weekDates = getPreviousWeekDates(date, days[0], days[1], currentWeekIndex + 1);
+    // Calculate dates for current week (using currentWeekIndex: 0 for current week, 1 for 1 week back, etc.)
+    const weekDates = getPreviousWeekDates(date, days[0], days[1], currentWeekIndex);
     const date1 = format(weekDates[days[0]], 'MMM do');
     const date2 = format(weekDates[days[1]], 'MMM do');
     
@@ -385,7 +385,7 @@ export default function Home() {
                   </div>
 
                   {/* Yes/No buttons */}
-                  {currentAnswerState === null && (
+                  {!currentAnswerState && (
                     <div className="flex gap-4 mb-6">
                       <Button 
                         onClick={() => handleAnswer('yes')}
