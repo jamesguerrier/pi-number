@@ -87,7 +87,36 @@ export default function Home() {
     if (firstInputWithNumber >= 0) {
       setCurrentInputIndex(firstInputWithNumber);
       setCurrentStep('questions');
-      setCurrentWeekIndex(0);
+      
+      let initialWeekIndex = 0;
+
+      // Logic to skip Week 0 if today is Monday and the set is Lun/Mar or Dim/Lun
+      if (date) {
+        const todayEnglish = format(date, 'EEEE'); // e.g., "Monday"
+        
+        const currentResults = results[firstInputWithNumber];
+        if (currentResults.length > 0) {
+            const firstResult = currentResults[0];
+            const days = Object.keys(firstResult.days); // French day names, e.g., ['lundi', 'mardi']
+            
+            if (days.length >= 2) {
+                const day1English = getEnglishDayName(days[0]);
+                const day2English = getEnglishDayName(days[1]);
+                
+                // Check if the pair includes Monday and Tuesday OR Sunday and Monday
+                const dayPair = [day1English, day2English];
+                const isLunMar = dayPair.includes('Monday') && dayPair.includes('Tuesday');
+                const isDimLun = dayPair.includes('Sunday') && dayPair.includes('Monday');
+                
+                // If today is Monday AND the set is (Monday, Tuesday) or (Sunday, Monday), start at Week 1
+                if (todayEnglish === 'Monday' && (isLunMar || isDimLun)) {
+                    initialWeekIndex = 1; 
+                }
+            }
+        }
+      }
+
+      setCurrentWeekIndex(initialWeekIndex);
     } else {
       alert("Please enter at least one number");
     }
@@ -385,7 +414,7 @@ export default function Home() {
                   </div>
 
                   {/* Yes/No buttons */}
-                  {!currentAnswerState && (
+                  {(currentAnswerState === null || currentAnswerState === undefined) && (
                     <div className="flex gap-4 mb-6">
                       <Button 
                         onClick={() => handleAnswer('yes')}
