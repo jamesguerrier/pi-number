@@ -82,40 +82,50 @@ export default function Home() {
           <div className="space-y-6">
             <label className="text-sm font-medium text-gray-700">Enter Six 2-Digit Numbers</label>
             
-            {/* First set of 3 inputs (AM) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[0, 1, 2].map((index) => (
-                <div key={index} className="space-y-2">
-                  <label className="text-xs text-gray-500">{inputLabels[index]}</label>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="00"
-                    value={numbers[index]}
-                    onChange={(e) => handleNumberChange(index, e.target.value)}
-                    className="text-center text-2xl font-bold h-14"
-                    maxLength={2}
-                  />
-                </div>
-              ))}
+            {/* DAY Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-center">
+                <h3 className="text-lg font-semibold text-gray-800 bg-yellow-100 px-4 py-2 rounded-md">DAY</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[0, 1, 2].map((index) => (
+                  <div key={index} className="space-y-2">
+                    <label className="text-xs text-gray-500">{inputLabels[index]}</label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="00"
+                      value={numbers[index]}
+                      onChange={(e) => handleNumberChange(index, e.target.value)}
+                      className="text-center text-2xl font-bold h-14"
+                      maxLength={2}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Second set of 3 inputs (PM) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[3, 4, 5].map((index) => (
-                <div key={index} className="space-y-2">
-                  <label className="text-xs text-gray-500">{inputLabels[index]}</label>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="00"
-                    value={numbers[index]}
-                    onChange={(e) => handleNumberChange(index, e.target.value)}
-                    className="text-center text-2xl font-bold h-14"
-                    maxLength={2}
-                  />
-                </div>
-              ))}
+            {/* MOON Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-center">
+                <h3 className="text-lg font-semibold text-gray-800 bg-blue-100 px-4 py-2 rounded-md">MOON</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[3, 4, 5].map((index) => (
+                  <div key={index} className="space-y-2">
+                    <label className="text-xs text-gray-500">{inputLabels[index]}</label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="00"
+                      value={numbers[index]}
+                      onChange={(e) => handleNumberChange(index, e.target.value)}
+                      className="text-center text-2xl font-bold h-14"
+                      maxLength={2}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
