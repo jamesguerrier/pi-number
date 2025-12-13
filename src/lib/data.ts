@@ -95,27 +95,26 @@ export function findNumberInData(number: number) {
     days: Record<string, number[]>;
   }> = [];
 
-  // Convert number to string for comparison
-  const numStr = number.toString();
-
   // Search through all data
   for (const [category, subCategories] of Object.entries(numberData)) {
     for (const [subCategory, days] of Object.entries(subCategories as Record<string, any>)) {
-      // Check if number exists in any day array
-      const matchingDays: Record<string, number[]> = {};
       
-      for (const [day, numbers] of Object.entries(days as Record<string, number[]>)) {
+      let foundInSet = false;
+      
+      // Check if number exists in any day array within this subCategory set
+      for (const numbers of Object.values(days as Record<string, number[]>)) {
         if (numbers.includes(number)) {
-          matchingDays[day] = numbers;
+          foundInSet = true;
+          break;
         }
       }
 
-      // If we found matches in this subcategory
-      if (Object.keys(matchingDays).length > 0) {
+      // If we found a match in this set, include the entire set's data
+      if (foundInSet) {
         results.push({
           category,
           subCategory,
-          days: matchingDays
+          days: days as Record<string, number[]> // Include all days and their numbers
         });
       }
     }

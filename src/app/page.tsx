@@ -93,6 +93,28 @@ export default function Home() {
     }
   };
 
+  const handleProgression = (currentInput: number, currentWeek: number) => {
+    // Move to next week or next input
+    if (currentWeek < 3) {
+      setCurrentWeekIndex(currentWeek + 1);
+      setWeekUserNumbers(["", "", ""]);
+    } else {
+      // Move to next input with number
+      const nextInputIndex = numbers.findIndex((num, index) => 
+        index > currentInput && num && !isNaN(parseInt(num))
+      );
+      
+      if (nextInputIndex >= 0) {
+        setCurrentInputIndex(nextInputIndex);
+        setCurrentWeekIndex(0);
+        setWeekUserNumbers(["", "", ""]);
+      } else {
+        // All inputs processed
+        setCurrentStep('input');
+      }
+    }
+  };
+
   const handleAnswer = (answer: 'yes' | 'no') => {
     if (!date) return;
     
@@ -122,44 +144,17 @@ export default function Home() {
     currentAnswer.weekAnswers[currentWeekIndex].answer = answer;
     currentAnswer.weekAnswers[currentWeekIndex].dates = weekDates;
     
+    // If NO, we proceed immediately to the next week/input
+    if (answer === 'no') {
+      setUserAnswers(updatedAnswers);
+      handleProgression(currentInputIndex, currentWeekIndex);
+    } 
+    
+    // If YES, we update the state to show the input fields, but progression is handled by the 'NEXT' button
     if (answer === 'yes') {
-      // Store the numbers user entered for this week
-      currentAnswer.weekAnswers[currentWeekIndex].userNumbers = [...weekUserNumbers];
-      
-      // Add to final results
-      const newFinalResults = [...finalResults];
-      weekUserNumbers.forEach(num => {
-        if (num.trim()) {
-          const day1 = days[0];
-          const day2 = days[1];
-          const date1 = format(weekDates[day1], 'MMM do');
-          const date2 = format(weekDates[day2], 'MMM do');
-          newFinalResults.push(`${inputLabels[currentInputIndex]}: Week ${currentWeekIndex + 1} (${date1}/${date2}): ${num}`);
-        }
-      });
-      setFinalResults(newFinalResults);
-    }
-    
-    setUserAnswers(updatedAnswers);
-    
-    // Move to next week or next input
-    if (currentWeekIndex < 3) {
-      setCurrentWeekIndex(currentWeekIndex + 1);
-      setWeekUserNumbers(["", "", ""]);
-    } else {
-      // Move to next input with number
-      const nextInputIndex = numbers.findIndex((num, index) => 
-        index > currentInputIndex && num && !isNaN(parseInt(num))
-      );
-      
-      if (nextInputIndex >= 0) {
-        setCurrentInputIndex(nextInputIndex);
-        setCurrentWeekIndex(0);
-        setWeekUserNumbers(["", "", ""]);
-      } else {
-        // All inputs processed
-        setCurrentStep('input');
-      }
+      // We don't store weekUserNumbers or update finalResults yet, as the user hasn't entered them.
+      // We just set the answer to 'yes' to trigger the input fields to show.
+      setUserAnswers(updatedAnswers);
     }
   };
 
@@ -168,6 +163,42 @@ export default function Home() {
     const newNumbers = [...weekUserNumbers];
     newNumbers[index] = numericValue;
     setWeekUserNumbers(newNumbers);
+  };
+
+  const handleNextAfterYes = () => {
+    if (!date) return;
+
+    const updatedAnswers = [...userAnswers];
+    const currentAnswer = updatedAnswers[currentInputIndex];
+    
+    // Get the days from matching results
+    const currentResults = matchingResults[currentInputIndex];
+    if (currentResults.length === 0) return;
+    
+    const firstResult = currentResults[0];
+    const days = Object.keys(firstResult.days);
+    if (days.length < 2) return;
+
+    // 1. Store the numbers user entered for this week
+    currentAnswer.weekAnswers[currentWeekIndex].userNumbers = [...weekUserNumbers];
+    
+    // 2. Add to final results
+    const newFinalResults = [...finalResults];
+    weekUserNumbers.forEach(num => {
+      if (num.trim()) {
+        const day1 = days[0];
+        const day2 = days[1];
+        const weekDates = currentAnswer.weekAnswers[currentWeekIndex].dates;
+        const date1 = format(weekDates[day1], 'MMM do');
+        const date2 = format(weekDates[day2], 'MMM do');
+        newFinalResults.push(`${inputLabels[currentInputIndex]}: Week ${currentWeekIndex + 1} (${date1}/${date2}): ${num}`);
+      }
+    });
+    setFinalResults(newFinalResults);
+    setUserAnswers(updatedAnswers);
+
+    // 3. Progression
+    handleProgression(currentInputIndex, currentWeekIndex);
   };
 
   const getCurrentQuestion = () => {
@@ -202,6 +233,7 @@ export default function Home() {
     return results.map((result, idx) => (
       <div key={idx} className="mb-4 p-3 bg-gray-50 rounded-md">
         <div className="font-medium mb-2">
+          {/* Iterate over all days in the set */}
           {Object.entries(result.days).map(([day, numbers]) => (
             <div key={day} className="mb-1">
               <span className="font-semibold">{getEnglishDayName(day)}</span>: [{numbers.join(", ")}]
@@ -213,6 +245,7 @@ export default function Home() {
   };
 
   const resetAnalysis = () => {
+    setDate(new Date());
     setNumbers(["", "", "", "", "", ""]);
     setMatchingResults([]);
     setUserAnswers([]);
@@ -222,6 +255,8 @@ export default function Home() {
     setCurrentInputIndex(0);
     setCurrentWeekIndex(0);
   };
+
+  const currentAnswerState = userAnswers[currentInputIndex]?.weekAnswers[currentWeekIndex]?.answer;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
@@ -350,25 +385,27 @@ export default function Home() {
                   </div>
 
                   {/* Yes/No buttons */}
-                  <div className="flex gap-4 mb-6">
-                    <Button 
-                      onClick={() => handleAnswer('yes')}
-                      className="flex-1 h-12 bg-green-600 hover:bg-green-700"
-                      size="lg"
-                    >
-                      YES
-                    </Button>
-                    <Button 
-                      onClick={() => handleAnswer('no')}
-                      className="flex-1 h-12 bg-red-600 hover:bg-red-700"
-                      size="lg"
-                    >
-                      NO
-                    </Button>
-                  </div>
+                  {currentAnswerState === null && (
+                    <div className="flex gap-4 mb-6">
+                      <Button 
+                        onClick={() => handleAnswer('yes')}
+                        className="flex-1 h-12 bg-green-600 hover:bg-green-700"
+                        size="lg"
+                      >
+                        YES
+                      </Button>
+                      <Button 
+                        onClick={() => handleAnswer('no')}
+                        className="flex-1 h-12 bg-red-600 hover:bg-red-700"
+                        size="lg"
+                      >
+                        NO
+                      </Button>
+                    </div>
+                  )}
 
-                  {/* Number inputs for YES answer - Show only if answer is 'yes' and we are still in the current week/input */}
-                  {userAnswers[currentInputIndex]?.weekAnswers[currentWeekIndex]?.answer === 'yes' && (
+                  {/* Number inputs for YES answer - Show only if answer is 'yes' */}
+                  {currentAnswerState === 'yes' && (
                     <div className="space-y-4 p-4 bg-green-50 rounded-lg">
                       <h4 className="font-semibold text-gray-800">Enter the 3 numbers you see:</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -386,28 +423,10 @@ export default function Home() {
                         ))}
                       </div>
                       <Button 
-                        onClick={() => {
-                          // Logic to move to next step after entering numbers
-                          if (currentWeekIndex < 3) {
-                            setCurrentWeekIndex(currentWeekIndex + 1);
-                            setWeekUserNumbers(["", "", ""]);
-                          } else {
-                            // Move to next input
-                            const nextInputIndex = numbers.findIndex((num, index) => 
-                              index > currentInputIndex && num && !isNaN(parseInt(num))
-                            );
-                            
-                            if (nextInputIndex >= 0) {
-                              setCurrentInputIndex(nextInputIndex);
-                              setCurrentWeekIndex(0);
-                              setWeekUserNumbers(["", "", ""]);
-                            } else {
-                              setCurrentStep('input');
-                            }
-                          }
-                        }}
+                        onClick={handleNextAfterYes}
                         className="w-full h-12 mt-4"
                         size="lg"
+                        disabled={weekUserNumbers.every(num => num === "")}
                       >
                         NEXT
                       </Button>
