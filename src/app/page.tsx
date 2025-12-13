@@ -30,6 +30,16 @@ export default function Home() {
     alert(`Date: ${date ? format(date, "yyyy-MM-dd") : "Not selected"}\nNumbers: ${numbers.join(", ")}`);
   };
 
+  // Define the labels for the inputs
+  const inputLabels = [
+    "1er-AM",
+    "2em-AM", 
+    "3em-AM",
+    "1er-PM",
+    "2em-PM",
+    "3em-PM"
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8 flex items-center justify-center">
       <Card className="w-full max-w-2xl shadow-lg">
@@ -72,11 +82,11 @@ export default function Home() {
           <div className="space-y-6">
             <label className="text-sm font-medium text-gray-700">Enter Six 2-Digit Numbers</label>
             
-            {/* First set of 3 inputs */}
+            {/* First set of 3 inputs (AM) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[0, 1, 2].map((index) => (
                 <div key={index} className="space-y-2">
-                  <label className="text-xs text-gray-500">Number {index + 1}</label>
+                  <label className="text-xs text-gray-500">{inputLabels[index]}</label>
                   <Input
                     type="text"
                     inputMode="numeric"
@@ -90,11 +100,11 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Second set of 3 inputs */}
+            {/* Second set of 3 inputs (PM) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[3, 4, 5].map((index) => (
                 <div key={index} className="space-y-2">
-                  <label className="text-xs text-gray-500">Number {index + 1}</label>
+                  <label className="text-xs text-gray-500">{inputLabels[index]}</label>
                   <Input
                     type="text"
                     inputMode="numeric"
