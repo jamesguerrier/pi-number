@@ -1,23 +1,4 @@
-import { addDays, subDays, format, startOfWeek, endOfWeek } from "date-fns";
-
-// Function to get dates for 4 weeks back from a given date
-export function getFourWeekDates(startDate: Date) {
-  const weeks = [];
-  
-  for (let i = 0; i < 4; i++) {
-    const weekStart = subDays(startDate, (i + 1) * 7);
-    const weekEnd = subDays(startDate, i * 7);
-    
-    weeks.push({
-      weekNumber: i + 1,
-      start: weekStart,
-      end: weekEnd,
-      label: `Week ${i + 1} (${format(weekStart, 'MMM dd')} - ${format(weekEnd, 'MMM dd')})`
-    });
-  }
-  
-  return weeks;
-}
+import { subDays, format } from "date-fns";
 
 // Function to get specific days for a week based on French day names
 export function getDaysForWeek(baseDate: Date, frenchDay1: string, frenchDay2: string) {
@@ -51,6 +32,7 @@ export function getDaysForWeek(baseDate: Date, frenchDay1: string, frenchDay2: s
   const day2Date = getMostRecentDay(day2Index);
 
   // If day2 is before day1, go back another week for day2
+  // This logic ensures both days fall within the same logical week span relative to the reference date.
   if (day2Date < day1Date) {
     return {
       [frenchDay1]: day1Date,
@@ -66,7 +48,11 @@ export function getDaysForWeek(baseDate: Date, frenchDay1: string, frenchDay2: s
 
 // Function to get dates for specific days in previous weeks
 export function getPreviousWeekDates(baseDate: Date, frenchDay1: string, frenchDay2: string, weeksBack: number) {
-  const baseForWeek = subDays(baseDate, weeksBack * 7);
+  // weeksBack is 1, 2, 3, 4. We want to subtract 0, 7, 14, 21 days respectively.
+  const daysToSubtract = (weeksBack - 1) * 7;
+  const baseForWeek = subDays(baseDate, daysToSubtract);
+  
+  // Use the adjusted base date to find the specific days within that week span
   return getDaysForWeek(baseForWeek, frenchDay1, frenchDay2);
 }
 
