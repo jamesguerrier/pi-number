@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, formatFinalResults } from "@/lib/utils";
 import { findNumberInData, getEnglishDayName } from "@/lib/data";
 import { getPreviousWeekDates } from "@/lib/dateUtils";
 
@@ -39,7 +39,7 @@ export default function Home() {
   const [currentWeekIndex, setCurrentWeekIndex] = useState<number>(0);
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [weekUserNumbers, setWeekUserNumbers] = useState<string[]>(["", "", ""]);
-  const [finalResults, setFinalResults] = useState<string[]>([]);
+  const [rawFinalResults, setRawFinalResults] = useState<string[]>([]);
 
   // Define the labels for the inputs
   const inputLabels = [
@@ -50,6 +50,11 @@ export default function Home() {
     "2em-PM",
     "3em-PM"
   ];
+
+  // Memoize the formatted results for display
+  const formattedFinalResults = useMemo(() => {
+    return formatFinalResults(rawFinalResults);
+  }, [rawFinalResults]);
 
   const handleNumberChange = (index: number, value: string) => {
     // Only allow numbers and limit to 2 digits
@@ -185,19 +190,15 @@ export default function Home() {
     // 1. Store the numbers user entered for this week
     currentAnswer.weekAnswers[currentWeekIndex].userNumbers = [...weekUserNumbers];
     
-    // 2. Add to final results
-    const newFinalResults = [...finalResults];
+    // 2. Add to raw final results
+    const newRawFinalResults = [...rawFinalResults];
     weekUserNumbers.forEach(num => {
       if (num.trim()) {
-        const day1 = days[0];
-        const day2 = days[1];
-        const weekDates = currentAnswer.weekAnswers[currentWeekIndex].dates;
-        const date1 = format(weekDates[day1], 'MMM do');
-        const date2 = format(weekDates[day2], 'MMM do');
-        newFinalResults.push(`${inputLabels[currentInputIndex]}: Week ${currentWeekIndex + 1} (${date1}/${date2}): ${num}`);
+        // Store the raw result string including context, even though we only use the number for counting later
+        newRawFinalResults.push(`${inputLabels[currentInputIndex]}: Week ${currentWeekIndex + 1}: ${num}`);
       }
     });
-    setFinalResults(newFinalResults);
+    setRawFinalResults(newRawFinalResults);
     setUserAnswers(updatedAnswers);
 
     // 3. Progression
@@ -253,7 +254,7 @@ export default function Home() {
     setNumbers(["", "", "", "", "", ""]);
     setMatchingResults([]);
     setUserAnswers([]);
-    setFinalResults([]);
+    setRawFinalResults([]);
     setWeekUserNumbers(["", "", ""]);
     setCurrentStep('input');
     setCurrentInputIndex(0);
@@ -466,17 +467,17 @@ export default function Home() {
             )}
 
             {/* Final Results Section */}
-            {finalResults.length > 0 && currentStep === 'input' && (
+            {formattedFinalResults.length > 0 && currentStep === 'input' && (
               <div className="mt-8 p-6 bg-gray-50 rounded-lg border">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">Final Results (Numbers you entered when answering YES)</h3>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {finalResults.map((result, index) => (
-                    <div key={index} className="p-3 bg-white rounded border">
+                  {formattedFinalResults.map((result, index) => (
+                    <div key={index} className="p-3 bg-white rounded border font-mono text-lg">
                       {result}
                     </div>
                   ))}
                 </div>
-                {finalResults.length === 0 && (
+                {formattedFinalResults.length === 0 && (
                   <p className="text-gray-500 italic">No numbers were recorded (all answers were NO)</p>
                 )}
                 <Button 
