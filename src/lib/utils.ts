@@ -42,3 +42,77 @@ export function formatFinalResults(results: string[]): string[] {
 
   return formattedResults;
 }
+
+/**
+ * Extracts unique numbers (as integers) from the raw result strings.
+ */
+export function getUniqueNumbersFromRawResults(results: string[]): number[] {
+  const uniqueNumbers = new Set<number>();
+  results.forEach(result => {
+    const match = result.match(/:\s*(\d+)$/);
+    if (match && match[1]) {
+      uniqueNumbers.add(parseInt(match[1]));
+    }
+  });
+  return Array.from(uniqueNumbers).sort((a, b) => a - b);
+}
+
+/**
+ * Helper function to get unique digits of a 2-digit number (0-99).
+ */
+function getDigits(n: number): Set<number> {
+  // Pad to 2 digits (e.g., 5 -> '05')
+  const s = String(n).padStart(2, '0'); 
+  const digits = new Set<number>();
+  digits.add(parseInt(s[0]));
+  digits.add(parseInt(s[1]));
+  return digits;
+}
+
+/**
+ * Finds pairs of numbers that share exactly one digit (Mariage).
+ * Pairs are formatted as "(XX x YY)".
+ */
+export function findMariagePairs(numbers: number[]): string[] {
+  const pairs: Set<string> = new Set();
+  const results: string[] = [];
+
+  // Iterate through all unique pairs (i < j to avoid duplicates and self-pairing)
+  for (let i = 0; i < numbers.length; i++) {
+    for (let j = i + 1; j < numbers.length; j++) {
+      const numA = numbers[i];
+      const numB = numbers[j];
+
+      const digitsA = getDigits(numA);
+      const digitsB = getDigits(numB);
+
+      let commonDigitCount = 0;
+      
+      // Check how many digits are shared
+      digitsA.forEach(digitA => {
+        if (digitsB.has(digitA)) {
+          commonDigitCount++;
+        }
+      });
+      
+      // We need exactly one common digit.
+      if (commonDigitCount === 1) {
+        // Format the pair (e.g., 24 x 45), ensuring 2 digits
+        const formattedA = String(numA).padStart(2, '0');
+        const formattedB = String(numB).padStart(2, '0');
+        
+        const pairString = `(${formattedA} x ${formattedB})`;
+        
+        // Use a sorted key to prevent duplicate pairs (e.g., 24-45 and 45-24)
+        const sortedPairKey = [numA, numB].sort((a, b) => a - b).join('-');
+        
+        if (!pairs.has(sortedPairKey)) {
+          pairs.add(sortedPairKey);
+          results.push(pairString);
+        }
+      }
+    }
+  }
+  
+  return results;
+}
