@@ -3,9 +3,19 @@
 import { NumberAnalysisForm } from "@/components/number-analysis-form";
 import { useAuth } from "@/context/auth-context";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function FloridaPage() {
   const { isLoading, session } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    // If not authenticated and not loading, redirect to login
+    if (!isLoading && !session) {
+      router.push('/login');
+    }
+  }, [isLoading, session, router]);
 
   if (isLoading) {
     return (
@@ -16,8 +26,13 @@ export default function FloridaPage() {
   }
 
   if (!session) {
-    // Redirection handled by AuthProvider, but return null/loading state while redirecting
-    return null;
+    // Show loading while redirecting
+    return (
+      <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Redirecting to login...</span>
+      </div>
+    );
   }
 
   return (
