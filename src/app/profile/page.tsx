@@ -50,7 +50,13 @@ export default function ProfilePage() {
 
       if (error) {
         console.error('Error fetching profile:', error);
-        toast.error("Failed to load profile");
+        
+        // If profile doesn't exist, create one
+        if (error.code === 'PGRST116') {
+          await createUserProfile();
+        } else {
+          toast.error("Failed to load profile");
+        }
       } else {
         setProfile(data);
         setFormData({
@@ -67,6 +73,39 @@ export default function ProfilePage() {
     }
   };
 
+  const createUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          email: user.email,
+          first_name: user.user_metadata?.first_name || user.user_metadata?.full_name || 'User',
+          last_name: user.user_metadata?.last_name || '',
+          avatar_url: null
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setProfile(data);
+      setFormData({
+        first_name: data.first_name || "",
+        last_name: data.last_name || "",
+        avatar_url: data.avatar_url || "",
+      });
+      toast.success("Profile created successfully");
+    } catch (error: any) {
+      console.error('Error creating profile:', error);
+      toast.error("Failed to create profile: " + error.message);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -76,38 +115,68 @@ export default function ProfilePage() {
   };
 
   const handleSaveProfile = async () => {
-    if (!user || !profile) return;
+    if (!user) return;
     
     setSaving(true);
     try {
-      const { error } = await supabase
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update({
-          first_name: formData.first_name || null,
-          last_name: formData.last_name || null,
-          avatar_url: formData.avatar_url || null,
-        })
-        .eq('id', user.id);
+        .select('id')
+        .eq('id', user.id)
+        .single();
 
-      if (error) {
-        throw error;
+      let result;
+      
+      if (existingProfile) {
+        // Update existing profile
+        result = await supabase
+          .from('profiles')
+          .update({
+            first_name: formData.first_name || null,
+            last_name: formData.last_name || null,
+            avatar_url: formData.avatar_url || null,
+          })
+          .eq('id', user.id);
+      } else {
+        // Create new profile
+        result = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            email: user.email,
+            first_name: formData.first_name || null,
+            last_name: formData.last_name || null,
+            avatar_url: formData.avatar_url || null,
+          });
       }
 
-      toast.success("Profile updated successfully");
+      if (result.error) {
+        throw result.error;
+      }
+
+      toast.success("Profile saved successfully");
       fetchUserProfile(); // Refresh profile data
     } catch (error: any) {
-      console.error('Error updating profile:', error);
-      toast.error("Failed to update profile: " + error.message);
+      console.error('Error saving profile:', error);
+      toast.error("Failed to save profile: " + error.message);
     } finally {
       setSaving(false);
     }
   };
 
   const getInitials = () => {
-    if (!profile) return "U";
+    if (!profile) {
+      const firstName = user?.user_metadata?.first_name || user?.user_metadata?.full_name || 'User';
+      const lastName = user?.user_metadata?.last_name || '';
+      const first = firstName?.[0] || '';
+      const last = lastName?.[0] || '';
+      return (first + last).toUpperCase() || user?.email?.[0]?.toUpperCase() || "U";
+    }
+    
     const first = profile.first_name?.[0] || '';
     const last = profile.last_name?.[0] || '';
-    return (first + last).toUpperCase() || profile.email?.[0].toUpperCase() || "U";
+    return (first + last).toUpperCase() || profile.email?.[0]?.toUpperCase() || "U";
   };
 
   if (authLoading || loading) {
@@ -152,12 +221,14 @@ export default function ProfilePage() {
             </Avatar>
             <div className="text-center">
               <h3 className="text-xl font-semibold">
-                {profile?.first_name} {profile?.last_name}
+                {profile?.first_name || user.user_metadata?.first_name || user.user_metadata?.full_name || 'User'} {profile?.last_name || user.user_metadata?.last_name || ''}
               </h3>
-              <p className="text-muted-foreground">{profile?.email}</p>
-              <p className="text-sm text-gray-500 mt-2">
-                Member since {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}
-              </p>
+              <p className="text-muted-foreground">{user.email}</p>
+              {profile?.created_at && (
+                <p className="text-sm text-gray-500 mt-2">
+                  Member since {new Date(profile.created_at).toLocaleDateString()}
+                </p>
+              )}
             </div>
           </div>
 
@@ -205,7 +276,7 @@ export default function ProfilePage() {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                value={profile?.email || ""}
+                value={user.email || ""}
                 disabled
                 className="bg-gray-50 dark:bg-gray-900"
               />

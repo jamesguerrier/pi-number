@@ -49,11 +49,15 @@ export function UserAvatar() {
 
       if (error) {
         console.error('Error fetching profile:', error);
-        // Create a default profile if not found
+        
+        // If profile doesn't exist, create one
         if (error.code === 'PGRST116') {
+          await createUserProfile();
+        } else {
+          // For other errors, use metadata from auth
           const defaultProfile: UserProfile = {
             id: user.id,
-            first_name: user.user_metadata?.first_name || 'User',
+            first_name: user.user_metadata?.first_name || user.user_metadata?.full_name || 'User',
             last_name: user.user_metadata?.last_name || '',
             avatar_url: null,
             email: user.email || null
@@ -64,9 +68,55 @@ export function UserAvatar() {
         setProfile(data);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error in fetchUserProfile:', error);
+      // Use auth metadata as fallback
+      const fallbackProfile: UserProfile = {
+        id: user.id,
+        first_name: user.user_metadata?.first_name || user.user_metadata?.full_name || 'User',
+        last_name: user.user_metadata?.last_name || '',
+        avatar_url: null,
+        email: user.email || null
+      };
+      setProfile(fallbackProfile);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          email: user.email,
+          first_name: user.user_metadata?.first_name || user.user_metadata?.full_name || 'User',
+          last_name: user.user_metadata?.last_name || '',
+          avatar_url: null
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating profile:', error);
+        throw error;
+      }
+
+      setProfile(data);
+      toast.success("Profile created successfully");
+    } catch (error) {
+      console.error('Error in createUserProfile:', error);
+      // Use auth metadata as fallback
+      const fallbackProfile: UserProfile = {
+        id: user.id,
+        first_name: user.user_metadata?.first_name || user.user_metadata?.full_name || 'User',
+        last_name: user.user_metadata?.last_name || '',
+        avatar_url: null,
+        email: user.email || null
+      };
+      setProfile(fallbackProfile);
     }
   };
 
