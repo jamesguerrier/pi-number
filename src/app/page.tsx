@@ -88,35 +88,8 @@ export default function Home() {
       setCurrentInputIndex(firstInputWithNumber);
       setCurrentStep('questions');
       
-      let initialWeekIndex = 0;
-
-      // Logic to skip Week 0 if today is Monday and the set is Lun/Mar or Dim/Lun
-      if (date) {
-        const todayEnglish = format(date, 'EEEE'); // e.g., "Monday"
-        
-        const currentResults = results[firstInputWithNumber];
-        if (currentResults.length > 0) {
-            const firstResult = currentResults[0];
-            const days = Object.keys(firstResult.days); // French day names, e.g., ['lundi', 'mardi']
-            
-            if (days.length >= 2) {
-                const day1English = getEnglishDayName(days[0]);
-                const day2English = getEnglishDayName(days[1]);
-                
-                // Check if the pair includes Monday and Tuesday OR Sunday and Monday
-                const dayPair = [day1English, day2English];
-                const isLunMar = dayPair.includes('Monday') && dayPair.includes('Tuesday');
-                const isDimLun = dayPair.includes('Sunday') && dayPair.includes('Monday');
-                
-                // If today is Monday AND the set is (Monday, Tuesday) or (Sunday, Monday), start at Week 1
-                if (todayEnglish === 'Monday' && (isLunMar || isDimLun)) {
-                    initialWeekIndex = 1; 
-                }
-            }
-        }
-      }
-
-      setCurrentWeekIndex(initialWeekIndex);
+      // Always start at Week 1 (currentWeekIndex = 0, which translates to 1 week back)
+      setCurrentWeekIndex(0);
     } else {
       alert("Please enter at least one number");
     }
@@ -159,8 +132,9 @@ export default function Home() {
     const days = Object.keys(firstResult.days);
     if (days.length < 2) return;
     
-    // Calculate dates for this week (using currentWeekIndex: 0 for current week, 1 for 1 week back, etc.)
-    const weekDates = getPreviousWeekDates(date, days[0], days[1], currentWeekIndex);
+    // Calculate dates for this week (currentWeekIndex 0 means 1 week back, 1 means 2 weeks back, etc.)
+    const weeksBack = currentWeekIndex + 1;
+    const weekDates = getPreviousWeekDates(date, days[0], days[1], weeksBack);
     
     if (!currentAnswer.weekAnswers[currentWeekIndex]) {
       currentAnswer.weekAnswers[currentWeekIndex] = {
@@ -244,8 +218,9 @@ export default function Home() {
     const day1 = getEnglishDayName(days[0]);
     const day2 = getEnglishDayName(days[1]);
     
-    // Calculate dates for current week (using currentWeekIndex: 0 for current week, 1 for 1 week back, etc.)
-    const weekDates = getPreviousWeekDates(date, days[0], days[1], currentWeekIndex);
+    // Calculate dates for current week (currentWeekIndex 0 means 1 week back, 1 means 2 weeks back, etc.)
+    const weeksBack = currentWeekIndex + 1;
+    const weekDates = getPreviousWeekDates(date, days[0], days[1], weeksBack);
     const date1 = format(weekDates[days[0]], 'MMM do');
     const date2 = format(weekDates[days[1]], 'MMM do');
     
