@@ -53,6 +53,13 @@ export default function LoginPage() {
             theme="light"
             view={view as any}
             redirectTo={process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000/new-york'}
+            showLinks={true}
+            additionalData={{
+              data: {
+                first_name: '',
+                last_name: '',
+              }
+            }}
           />
         </CardContent>
       </Card>
