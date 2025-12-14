@@ -82,8 +82,8 @@ export function QuestionFlowSection({
 
   // Calculate progress
   const totalSets = analysisSets.length;
-  const totalQuestions = totalSets * 4;
-  const currentQuestionNumber = currentSetIndex * 4 + currentWeekIndex + 1;
+  const totalQuestions = totalSets * 5; // Updated from 4 to 5
+  const currentQuestionNumber = currentSetIndex * 5 + currentWeekIndex + 1; // Updated multiplier from 4 to 5
   const progressPercentage = (currentQuestionNumber / totalQuestions) * 100;
   
   // Determine which input labels are being analyzed
@@ -106,7 +106,7 @@ export function QuestionFlowSection({
 
         {/* Current question */}
         <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-          <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Week {currentWeekIndex + 1} of 4</h4>
+          <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Week {currentWeekIndex + 1} of 5</h4>
           <p className="text-gray-700 dark:text-gray-300">{getCurrentQuestion()}</p>
         </div>
 
@@ -163,7 +163,7 @@ export function QuestionFlowSection({
         <div className="mt-6">
           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
             <span>Set: {currentSetIndex + 1} of {totalSets}</span>
-            <span>Week: {currentWeekIndex + 1} of 4</span>
+            <span>Week: {currentWeekIndex + 1} of 5</span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2.5">
             <div 

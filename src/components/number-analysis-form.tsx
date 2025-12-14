@@ -21,7 +21,7 @@ type AnalysisSet = {
   id: string; // e.g., "lunMar-firstLM"
   inputIndices: number[]; // Indices of the original numbers that map to this set
   matchingResult: MatchingResult; // The actual data set (category, subCategory, days)
-  weekAnswers: Record<number, { // 0 to 3 for weeks 1 to 4
+  weekAnswers: Record<number, { // 0 to 4 for weeks 1 to 5
     answer: 'yes' | 'no' | null;
     userNumbers: string[];
     dates: Record<string, Date>;
@@ -118,8 +118,8 @@ export function NumberAnalysisForm({ location }: NumberAnalysisFormProps) {
   };
 
   const handleProgression = (currentSet: number, currentWeek: number) => {
-    // Move to next week or next set
-    if (currentWeek < 3) {
+    // Move to next week or next set (0 to 4 for 5 weeks)
+    if (currentWeek < 4) {
       setCurrentWeekIndex(currentWeek + 1);
       setWeekUserNumbers(["", "", ""]);
     } else {
@@ -224,7 +224,7 @@ export function NumberAnalysisForm({ location }: NumberAnalysisFormProps) {
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-gray-800 dark:text-gray-100">{location} Analysis</CardTitle>
           <CardDescription className="text-gray-600 dark:text-gray-400">
-            Enter numbers and analyze their patterns across 4 weeks
+            Enter numbers and analyze their patterns across 5 weeks
           </CardDescription>
         </CardHeader>
         
