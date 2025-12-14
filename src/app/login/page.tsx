@@ -6,9 +6,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
   const { isLoading, session } = useAuth();
+  const searchParams = useSearchParams();
+  const view = searchParams.get('view') || 'sign_in';
 
   if (isLoading) {
     return (
@@ -28,7 +31,9 @@ export default function LoginPage() {
     <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Sign In / Sign Up</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            {view === 'sign_up' ? 'Create Account' : 'Sign In'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Auth
@@ -46,7 +51,7 @@ export default function LoginPage() {
               },
             }}
             theme="light"
-            view="sign_in"
+            view={view as any}
             redirectTo={process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000/new-york'}
           />
         </CardContent>

@@ -4,7 +4,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "./theme-toggle"
 import { Button } from "./ui/button"
-import { LogOut } from "lucide-react"
+import { LogOut, LogIn, UserPlus } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
@@ -52,11 +52,26 @@ export function MainNav() {
         </div>
         
         <div className="flex flex-1 items-center justify-end space-x-2">
-          {session && (
+          {session ? (
             <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out">
               <LogOut className="h-[1.2rem] w-[1.2rem]" />
               <span className="sr-only">Sign Out</span>
             </Button>
+          ) : (
+            <>
+              <Link href="/login">
+                <Button variant="ghost" size="sm" className="gap-1">
+                  <LogIn className="h-4 w-4" />
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/login?view=sign_up">
+                <Button variant="default" size="sm" className="gap-1">
+                  <UserPlus className="h-4 w-4" />
+                  Sign Up
+                </Button>
+              </Link>
+            </>
           )}
           <ThemeToggle />
         </div>
