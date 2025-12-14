@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { MainNav } from "@/components/main-nav";
+import { AuthProvider } from "@/context/auth-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,12 +38,14 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <MainNav />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <MadeWithDyad />
-          <Toaster />
+          <AuthProvider>
+            <MainNav />
+            <main className="flex-grow">
+              {children}
+            </main>
+            <MadeWithDyad />
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

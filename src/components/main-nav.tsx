@@ -3,12 +3,29 @@
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "./theme-toggle"
+import { Button } from "./ui/button"
+import { LogOut } from "lucide-react"
+import { useAuth } from "@/context/auth-context"
+import { supabase } from "@/integrations/supabase/client"
+import { toast } from "sonner"
 
 export function MainNav() {
+  const { session } = useAuth();
+  
   const navItems = [
     { href: "/new-york", label: "New York" },
     { href: "/florida", label: "Florida" },
   ]
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Failed to sign out: " + error.message);
+    } else {
+      // Redirection handled by AuthProvider
+      toast.success("Successfully signed out.");
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -20,7 +37,7 @@ export function MainNav() {
             </span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
-            {navItems.map((item) => (
+            {session && navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -35,6 +52,12 @@ export function MainNav() {
         </div>
         
         <div className="flex flex-1 items-center justify-end space-x-2">
+          {session && (
+            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out">
+              <LogOut className="h-[1.2rem] w-[1.2rem]" />
+              <span className="sr-only">Sign Out</span>
+            </Button>
+          )}
           <ThemeToggle />
         </div>
       </div>
