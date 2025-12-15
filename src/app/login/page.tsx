@@ -1,12 +1,16 @@
 "use client";
 
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import dynamicImport from 'next/dynamic';
+
+// Dynamically import the client component, disabling SSR
+const LoginClient = dynamicImport(
+  () => import("./LoginClient"),
+  { ssr: false }
+);
 
 // Disable static rendering for this page as it relies heavily on client-side hooks and Supabase Auth UI.
 export const dynamic = "force-dynamic";
@@ -38,26 +42,8 @@ export default function LoginPage() {
             {view === 'sign_up' ? 'Create Account' : 'Sign In'}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Auth
-            supabaseClient={supabase}
-            providers={[]}
-            appearance={{
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: {
-                    brand: 'hsl(var(--primary))',
-                    brandAccent: 'hsl(var(--primary-foreground))',
-                  },
-                },
-              },
-            }}
-            theme="light"
-            view={view}
-            redirectTo="/new-york"
-          />
-        </CardContent>
+        {/* Render the dynamically imported client component */}
+        <LoginClient view={view} />
       </Card>
     </div>
   );
