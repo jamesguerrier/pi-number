@@ -1,19 +1,12 @@
 "use client";
 
-import dynamic from 'next/dynamic';
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-
-// Dynamically import the Auth component wrapper, disabling SSR
-const ClientOnlyAuth = dynamic(
-  () => import('@/components/client-only-auth').then((mod) => mod.ClientOnlyAuth),
-  { 
-    ssr: false,
-    loading: () => <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto my-10" />
-  }
-);
 
 export default function LoginPage() {
   const { isLoading, session } = useAuth();
@@ -43,7 +36,24 @@ export default function LoginPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ClientOnlyAuth view={view} />
+          <Auth
+            supabaseClient={supabase}
+            providers={[]}
+            appearance={{
+              theme: ThemeSupa,
+              variables: {
+                default: {
+                  colors: {
+                    brand: 'hsl(var(--primary))',
+                    brandAccent: 'hsl(var(--primary-foreground))',
+                  },
+                },
+              },
+            }}
+            theme="light"
+            view={view}
+            redirectTo="/new-york"
+          />
         </CardContent>
       </Card>
     </div>
