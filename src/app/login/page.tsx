@@ -52,7 +52,8 @@ export default function LoginPage() {
             }}
             theme="light"
             view={view as any}
-            redirectTo={process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000/new-york'}
+            // Use a relative path for redirectTo to avoid issues during static build
+            redirectTo="/new-york"
           />
         </CardContent>
       </Card>
