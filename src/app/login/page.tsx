@@ -8,6 +8,9 @@ import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
+// Disable static rendering for this page as it relies heavily on client-side hooks and Supabase Auth UI.
+export const dynamic = "force-dynamic";
+
 export default function LoginPage() {
   const { isLoading, session } = useAuth();
   const searchParams = useSearchParams();
