@@ -9,7 +9,8 @@ import { useMemo } from 'react';
 // NOTE: We use hardcoded values here as a fallback/reference, but they should ideally 
 // be managed via environment variables in a real deployment.
 const SUPABASE_URL = "https://tgqljjfjwelpeansngju.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRncWxqamZqd2VscGVhbnNuZ2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2ODU4OTUsImV4cCI6MjA4MTI2MTg5NX0.MbPYVHGgaULaDWup32e1WLFl9OjNAu45O-QV999ab1nU";
+// CORRECTED KEY: Removed the extra '9'
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRncWxqamZqd2VscGVhbnNuZ2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2ODU4OTUsImV4cCI6MjA4MTI2MTg5NX0.MbPYVHGgaULaDWup32e1WLFl9OjNAu45O-QV99ab1nU";
 
 interface LoginClientProps {
     view: 'sign_in' | 'sign_up' | 'forgotten_password' | 'update_password';
