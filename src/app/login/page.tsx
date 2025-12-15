@@ -6,21 +6,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
   const { isLoading, session } = useAuth();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const view = searchParams.get('view') || 'sign_in';
-
-  useEffect(() => {
-    // If already authenticated, redirect to main page
-    if (session && !isLoading) {
-      router.push('/new-york');
-    }
-  }, [session, isLoading, router]);
 
   if (isLoading) {
     return (
@@ -30,23 +21,11 @@ export default function LoginPage() {
     );
   }
 
-  // If already authenticated, show loading while redirect happens
+  // If already authenticated, the AuthProvider handles the redirect, 
+  // but return null while the redirect happens.
   if (session) {
-    return (
-      <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Redirecting...</span>
-      </div>
-    );
+    return null; 
   }
-
-  // Get the current origin for redirect URL
-  const getRedirectUrl = () => {
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/new-york`;
-    }
-    return 'http://localhost:3000/new-york';
-  };
 
   return (
     <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center p-4">
@@ -73,14 +52,7 @@ export default function LoginPage() {
             }}
             theme="light"
             view={view as any}
-            redirectTo={getRedirectUrl()}
-            showLinks={true}
-            additionalData={{
-              data: {
-                first_name: '',
-                last_name: '',
-              }
-            }}
+            redirectTo={process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000/new-york'}
           />
         </CardContent>
       </Card>
