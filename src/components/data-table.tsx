@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DatabaseRecord } from "@/lib/schemas";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 interface DataTableProps {
   data: DatabaseRecord[];
@@ -31,7 +31,7 @@ export function DataTable({ data, tableName }: DataTableProps) {
         <TableBody>
           {data.map((record) => (
             <TableRow key={record.id}>
-              <TableCell className="font-medium">{format(new Date(record.complete_date), 'MMM dd, yyyy')}</TableCell>
+              <TableCell className="font-medium">{format(parseISO(record.complete_date), 'MMM dd, yyyy')}</TableCell>
               <TableCell>{record.date_number}</TableCell>
               <TableCell>{record.first_am_day}</TableCell>
               <TableCell>{record.second_am_day}</TableCell>
