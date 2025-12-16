@@ -32,7 +32,7 @@ function Calendar({
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
 
-        /* 🔥 KEY FIXES */
+        /* KEY FIXES */
         table: "w-full border-collapse",
         head_row: "grid grid-cols-7",
         head_cell:
@@ -61,11 +61,12 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        PreviousMonthButton: () => (
-          <ChevronLeft className="h-4 w-4" />
+        // Fix: Pass all props (including onClick) to the custom buttons
+        IconLeft: ({ ...props }) => (
+          <ChevronLeft className="h-4 w-4" {...props} />
         ),
-        NextMonthButton: () => (
-          <ChevronRight className="h-4 w-4" />
+        IconRight: ({ ...props }) => (
+          <ChevronRight className="h-4 w-4" {...props} />
         ),
       }}
       {...props}
