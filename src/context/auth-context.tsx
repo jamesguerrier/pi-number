@@ -40,6 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!userId) return;
     
     try {
+      console.log(`Fetching profile for user: ${userId}`);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -47,10 +49,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) {
-        console.error("Error fetching profile:", error);
+        console.error("Error fetching profile details:", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
         // Don't try to create profile - let the trigger handle it
         // Just set a minimal profile for the app to work
-        setProfile({
+        const fallbackProfile = {
           id: userId,
           first_name: user?.email?.split('@')[0] || 'User',
           last_name: null,
@@ -58,10 +66,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: user?.email || null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        });
+        };
+        
+        console.log("Using fallback profile:", fallbackProfile);
+        setProfile(fallbackProfile);
       } else if (data) {
+        console.log("Profile fetched successfully:", data);
         setProfile(data as Profile);
       } else {
+        console.log("No profile data returned");
         setProfile(null);
       }
     } catch (err) {
@@ -90,18 +103,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(currentUser);
 
       if (currentUser) {
+        console.log("User authenticated:", currentUser.id, currentUser.email);
         // Only fetch profile if we have a user
         fetchProfile(currentUser.id);
       } else {
+        console.log("No user session");
         setProfile(null);
       }
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       // Log all events for debugging
-      if (event !== 'INITIAL_SESSION') {
-        console.log(`Auth Event: ${event}`);
-      }
+      console.log(`Auth Event: ${event}`, session?.user?.id);
       
       handleSession(session);
       
@@ -123,6 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Use a slight delay to ensure the client has fully initialized and processed any stored tokens
     setTimeout(() => {
         supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+            console.log("Initial session check:", initialSession?.user?.id);
             handleSession(initialSession);
             setIsLoading(false);
         });
