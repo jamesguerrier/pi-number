@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn, formatFinalResults, getMultiHitNumbers } from "@/lib/utils";
+import { cn, formatFinalResults, getUniqueNumbersFromRawResults, findMariagePairs } from "@/lib/utils";
 import { findNumberInData } from "@/lib/data";
 import { DateInputSection } from "./date-input-section";
 import { NumberInputSection } from "./number-input-section";
@@ -51,9 +51,10 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
     return formatFinalResults(rawFinalResults);
   }, [rawFinalResults]);
   
-  // Calculate Mariage pairs (now Multi-Hit Numbers)
+  // Calculate Mariage pairs
   const mariagePairs = useMemo(() => {
-    return getMultiHitNumbers(rawFinalResults);
+    const uniqueNumbers = getUniqueNumbersFromRawResults(rawFinalResults);
+    return findMariagePairs(uniqueNumbers);
   }, [rawFinalResults]);
 
   const handleNumberChange = (index: number, value: string) => {

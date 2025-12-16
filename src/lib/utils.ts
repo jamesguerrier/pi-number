@@ -58,35 +58,61 @@ export function getUniqueNumbersFromRawResults(results: string[]): number[] {
 }
 
 /**
- * Finds numbers that appeared more than once in the historical analysis.
- * Returns formatted strings (e.g., "70 (2 times)").
+ * Helper function to get unique digits of a 2-digit number (0-99).
  */
-export function getMultiHitNumbers(results: string[]): string[] {
-  const numberCounts: Record<string, number> = {};
-  
-  // 1. Extract numbers and count occurrences
-  results.forEach(result => {
-    const match = result.match(/:\s*(\d+)$/);
-    if (match && match[1]) {
-      const number = match[1];
-      numberCounts[number] = (numberCounts[number] || 0) + 1;
-    }
-  });
+function getDigits(n: number): Set<number> {
+  // Pad to 2 digits (e.g., 5 -> '05')
+  const s = String(n).padStart(2, '0'); 
+  const digits = new Set<number>();
+  digits.add(parseInt(s[0]));
+  digits.add(parseInt(s[1]));
+  return digits;
+}
 
-  // 2. Format only numbers with count > 1
-  const multiHitResults: string[] = [];
-  for (const [number, count] of Object.entries(numberCounts)) {
-    if (count > 1) {
-      multiHitResults.push(`${number} (${count} times)`);
+/**
+ * Finds pairs of numbers that share exactly one digit (Mariage).
+ * Pairs are formatted as "(XX x YY)".
+ */
+export function findMariagePairs(numbers: number[]): string[] {
+  const pairs: Set<string> = new Set();
+  const results: string[] = [];
+
+  // Iterate through all unique pairs (i < j to avoid duplicates and self-pairing)
+  for (let i = 0; i < numbers.length; i++) {
+    for (let j = i + 1; j < numbers.length; j++) {
+      const numA = numbers[i];
+      const numB = numbers[j];
+
+      const digitsA = getDigits(numA);
+      const digitsB = getDigits(numB);
+
+      let commonDigitCount = 0;
+      
+      // Check how many digits are shared
+      digitsA.forEach(digitA => {
+        if (digitsB.has(digitA)) {
+          commonDigitCount++;
+        }
+      });
+      
+      // We need exactly one common digit.
+      if (commonDigitCount === 1) {
+        // Format the pair (e.g., 24 x 45), ensuring 2 digits
+        const formattedA = String(numA).padStart(2, '0');
+        const formattedB = String(numB).padStart(2, '0');
+        
+        const pairString = `(${formattedA} x ${formattedB})`;
+        
+        // Use a sorted key to prevent duplicate pairs (e.g., 24-45 and 45-24)
+        const sortedPairKey = [numA, numB].sort((a, b) => a - b).join('-');
+        
+        if (!pairs.has(sortedPairKey)) {
+          pairs.add(sortedPairKey);
+          results.push(pairString);
+        }
+      }
     }
   }
-
-  // Sort numerically for better presentation
-  multiHitResults.sort((a, b) => {
-    const numA = parseInt(a.split(' ')[0]);
-    const numB = parseInt(b.split(' ')[0]);
-    return numA - numB;
-  });
-
-  return multiHitResults;
+  
+  return results;
 }
