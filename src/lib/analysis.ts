@@ -72,7 +72,14 @@ export async function performDatabaseAnalysis(
     const frenchDay1 = dayKeys[0];
     const frenchDay2 = dayKeys[1];
     
+    // 1. Aggregate all target numbers for this entire set (e.g., [53, 94, 49, 35])
+    const combinedTargetNumbers = Array.from(
+      new Set(Object.values(days).flat())
+    );
+    
     console.log(`\nProcessing Set: ${currentSet.id} (Days: ${frenchDay1}, ${frenchDay2})`);
+    console.log(`  Combined Target Numbers for Set: [${combinedTargetNumbers.join(', ')}]`);
+
 
     // Iterate through 5 weeks back (weeksBack = 1 to 5)
     for (let weeksBack = 1; weeksBack <= 5; weeksBack++) {
@@ -86,7 +93,7 @@ export async function performDatabaseAnalysis(
 
       console.log(`  Week ${weeksBack}: Querying dates ${date1String} (${frenchDay1}) and ${date2String} (${frenchDay2})`);
 
-      // 1. Fetch records for both dates in this week
+      // 2. Fetch records for both dates in this week
       const { data: records, error } = await supabase
         .from(locationTableName)
         .select('*')
@@ -102,34 +109,29 @@ export async function performDatabaseAnalysis(
         continue;
       }
 
-      // 2. Process fetched records
+      // 3. Process fetched records
       for (const record of records as DatabaseRecord[]) {
         const recordDate = record.complete_date;
         
-        // Determine which day of the set this record corresponds to
-        const isDay1 = recordDate === date1String;
-        const isDay2 = recordDate === date2String;
+        // Determine which day of the set this record corresponds to (for logging only)
+        const currentFrenchDay = recordDate === date1String ? frenchDay1 : (recordDate === date2String ? frenchDay2 : 'Unknown');
         
-        if (!isDay1 && !isDay2) continue;
-
-        const currentFrenchDay = isDay1 ? frenchDay1 : frenchDay2;
-        const targetNumbers = days[currentFrenchDay]; // The numbers we are looking for in this day's record
-        
-        console.log(`    Found Record for ${recordDate} (${currentFrenchDay}). Target Numbers: [${targetNumbers.join(', ')}]`);
+        console.log(`    Found Record for ${recordDate} (${currentFrenchDay}).`);
         console.log(`    Record Data:`, record);
 
-        // 3. Compare all database number fields against the target numbers
+        // 4. Compare all database number fields against the COMBINED target numbers
         for (const field of DB_NUMBER_FIELDS) {
           const dbNum = record[field];
           
           if (dbNum !== null && dbNum !== undefined) {
-            const matchedNumber = checkMatch(dbNum, targetNumbers);
+            // Use the combined list for matching
+            const matchedNumber = checkMatch(dbNum, combinedTargetNumbers);
             
             if (matchedNumber !== null) {
               // A match was found! Record this hit for ALL original input numbers that generated this set.
               currentSet.inputIndices.forEach(inputIndex => {
                 const inputLabel = inputLabels[inputIndex];
-                // Record the actual number found in the database (dbNum), not the target number.
+                // Record the actual number found in the database (dbNum).
                 rawFinalResults.push(`${inputLabel}: Week ${weeksBack}: ${dbNum}`);
               });
               console.log(`      HIT! Field: ${field}, DB Value: ${dbNum}`);
