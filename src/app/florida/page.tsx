@@ -33,7 +33,7 @@ export default function FloridaPage() {
             </Button>
           </Link>
         </div>
-        <NumberAnalysisForm location="Florida" />
+        <NumberAnalysisForm location="Florida" tableName="florida_data" />
       </div>
     </div>
   );

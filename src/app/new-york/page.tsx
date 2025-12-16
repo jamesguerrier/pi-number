@@ -33,7 +33,7 @@ export default function NewYorkPage() {
             </Button>
           </Link>
         </div>
-        <NumberAnalysisForm location="New York" />
+        <NumberAnalysisForm location="New York" tableName="new_york_data" />
       </div>
     </div>
   );

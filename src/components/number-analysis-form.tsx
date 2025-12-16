@@ -4,11 +4,11 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn, formatFinalResults, getUniqueNumbersFromRawResults, findMariagePairs } from "@/lib/utils";
 import { findNumberInData } from "@/lib/data";
-import { getPreviousWeekDates } from "@/lib/dateUtils";
 import { DateInputSection } from "./date-input-section";
 import { NumberInputSection } from "./number-input-section";
-import { QuestionFlowSection } from "./question-flow-section";
 import { FinalResultsSection } from "./final-results-section";
+import { performDatabaseAnalysis } from "@/lib/analysis";
+import { Loader2 } from "lucide-react";
 
 // Define types needed internally
 type MatchingResult = {
@@ -21,29 +21,20 @@ type AnalysisSet = {
   id: string; // e.g., "lunMar-firstLM"
   inputIndices: number[]; // Indices of the original numbers that map to this set
   matchingResult: MatchingResult; // The actual data set (category, subCategory, days)
-  weekAnswers: Record<number, { // 0 to 4 for weeks 1 to 5
-    answer: 'yes' | 'no' | null;
-    userNumbers: string[];
-    dates: Record<string, Date>;
-  }>;
 };
 
 interface NumberAnalysisFormProps {
     location: string;
+    tableName: string; // Added tableName prop
 }
 
-export function NumberAnalysisForm({ location }: NumberAnalysisFormProps) {
+export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [numbers, setNumbers] = useState<string[]>(["", "", "", "", "", ""]);
   
-  // NEW STATE STRUCTURE for grouped analysis
   const [analysisSets, setAnalysisSets] = useState<AnalysisSet[]>([]);
-  const [currentSetIndex, setCurrentSetIndex] = useState<number>(0);
-  
-  const [currentStep, setCurrentStep] = useState<'input' | 'questions'>('input');
-  const [currentWeekIndex, setCurrentWeekIndex] = useState<number>(0);
-  const [weekUserNumbers, setWeekUserNumbers] = useState<string[]>(["", "", ""]);
   const [rawFinalResults, setRawFinalResults] = useState<string[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Define the labels for the inputs
   const inputLabels = [
@@ -75,11 +66,21 @@ export function NumberAnalysisForm({ location }: NumberAnalysisFormProps) {
     setNumbers(newNumbers);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!date) return;
+
+    setIsAnalyzing(true);
+    setRawFinalResults([]); // Clear previous results
 
     // 1. Map input numbers to unique analysis sets
     const uniqueSetsMap = new Map<string, { indices: number[], result: MatchingResult }>();
+    const validNumbers = numbers.filter(num => num && !isNaN(parseInt(num)));
+
+    if (validNumbers.length === 0) {
+        alert("Please enter at least one valid number.");
+        setIsAnalyzing(false);
+        return;
+    }
 
     numbers.forEach((num, index) => {
       if (num && !isNaN(parseInt(num))) {
@@ -103,103 +104,26 @@ export function NumberAnalysisForm({ location }: NumberAnalysisFormProps) {
       id,
       inputIndices: data.indices,
       matchingResult: data.result,
-      weekAnswers: {}
     }));
     
     setAnalysisSets(newAnalysisSets);
     
     if (newAnalysisSets.length > 0) {
-      setCurrentSetIndex(0);
-      setCurrentWeekIndex(0);
-      setCurrentStep('questions');
+      // 2. Perform the full database analysis
+      const results = await performDatabaseAnalysis(
+        date,
+        tableName,
+        newAnalysisSets,
+        inputLabels,
+        numbers
+      );
+      
+      setRawFinalResults(results);
     } else {
       alert("No matching data found for entered numbers.");
     }
-  };
-
-  const handleProgression = (currentSet: number, currentWeek: number) => {
-    // Move to next week or next set (0 to 4 for 5 weeks)
-    if (currentWeek < 4) {
-      setCurrentWeekIndex(currentWeek + 1);
-      setWeekUserNumbers(["", "", ""]);
-    } else {
-      // Move to next set
-      if (currentSet < analysisSets.length - 1) {
-        setCurrentSetIndex(currentSet + 1);
-        setCurrentWeekIndex(0);
-        setWeekUserNumbers(["", "", ""]);
-      } else {
-        // All sets processed
-        setCurrentStep('input');
-      }
-    }
-  };
-
-  const handleAnswer = (answer: 'yes' | 'no') => {
-    if (!date || analysisSets.length === 0) return;
     
-    const updatedSets = [...analysisSets];
-    const currentSet = updatedSets[currentSetIndex];
-    
-    const { days } = currentSet.matchingResult;
-    const dayKeys = Object.keys(days);
-    if (dayKeys.length < 2) return;
-    
-    const weeksBack = currentWeekIndex + 1;
-    const weekDates = getPreviousWeekDates(date, dayKeys[0], dayKeys[1], weeksBack);
-    
-    // Record the answer and dates for this specific set/week
-    currentSet.weekAnswers[currentWeekIndex] = {
-      answer: answer,
-      userNumbers: [], 
-      dates: weekDates
-    };
-    
-    setAnalysisSets(updatedSets);
-    
-    // If NO, we proceed immediately to the next week/set
-    if (answer === 'no') {
-      handleProgression(currentSetIndex, currentWeekIndex);
-    } 
-    // If YES, we wait for user input via handleNextAfterYes
-  };
-
-  const handleWeekNumberChange = (index: number, value: string) => {
-    const numericValue = value.replace(/\D/g, "").slice(0, 2);
-    const newNumbers = [...weekUserNumbers];
-    newNumbers[index] = numericValue;
-    setWeekUserNumbers(newNumbers);
-  };
-
-  const handleNextAfterYes = () => {
-    if (!date || analysisSets.length === 0) return;
-
-    const updatedSets = [...analysisSets];
-    const currentSet = updatedSets[currentSetIndex];
-    
-    // 1. Store the numbers user entered for this week
-    currentSet.weekAnswers[currentWeekIndex].userNumbers = [...weekUserNumbers];
-    
-    // 2. Add to raw final results, attributing to ALL original input indices
-    const newRawFinalResults = [...rawFinalResults];
-    
-    currentSet.inputIndices.forEach(inputIndex => {
-      const inputLabel = inputLabels[inputIndex];
-      const weekNumber = currentWeekIndex + 1;
-      
-      weekUserNumbers.forEach(num => {
-        if (num.trim()) {
-          // Store the raw result string including context
-          newRawFinalResults.push(`${inputLabel}: Week ${weekNumber}: ${num}`);
-        }
-      });
-    });
-    
-    setRawFinalResults(newRawFinalResults);
-    setAnalysisSets(updatedSets);
-
-    // 3. Progression
-    handleProgression(currentSetIndex, currentWeekIndex);
+    setIsAnalyzing(false);
   };
 
   const resetAnalysis = () => {
@@ -207,16 +131,10 @@ export function NumberAnalysisForm({ location }: NumberAnalysisFormProps) {
     setNumbers(["", "", "", "", "", ""]);
     setAnalysisSets([]);
     setRawFinalResults([]);
-    setWeekUserNumbers(["", "", ""]);
-    setCurrentStep('input');
-    setCurrentSetIndex(0);
-    setCurrentWeekIndex(0);
+    setIsAnalyzing(false);
   };
   
-  // Helper function for QuestionFlowSection to go back to input
-  const handleBackToInput = () => {
-    setCurrentStep('input');
-  };
+  const showResults = rawFinalResults.length > 0 || analysisSets.length > 0;
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
@@ -232,8 +150,8 @@ export function NumberAnalysisForm({ location }: NumberAnalysisFormProps) {
           {/* Date Input Section */}
           <DateInputSection date={date} setDate={setDate} />
 
-          {/* Number Inputs Section - Only show in input step */}
-          {currentStep === 'input' && (
+          {/* Number Inputs Section */}
+          {!isAnalyzing && !showResults && (
             <NumberInputSection 
               numbers={numbers}
               inputLabels={inputLabels}
@@ -241,26 +159,17 @@ export function NumberAnalysisForm({ location }: NumberAnalysisFormProps) {
               handleNext={handleNext}
             />
           )}
-
-          {/* Question Flow Section */}
-          {currentStep === 'questions' && analysisSets.length > 0 && date && (
-            <QuestionFlowSection
-              analysisSets={analysisSets}
-              currentSetIndex={currentSetIndex}
-              currentWeekIndex={currentWeekIndex}
-              date={date}
-              numbers={numbers}
-              inputLabels={inputLabels}
-              weekUserNumbers={weekUserNumbers}
-              handleAnswer={handleAnswer}
-              handleWeekNumberChange={handleWeekNumberChange}
-              handleNextAfterYes={handleNextAfterYes}
-              handleBackToInput={handleBackToInput}
-            />
+          
+          {/* Loading State */}
+          {isAnalyzing && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-lg font-medium text-muted-foreground">Analyzing 5 weeks of historical data...</p>
+            </div>
           )}
 
           {/* Final Results Section */}
-          {currentStep === 'input' && (rawFinalResults.length > 0 || analysisSets.length > 0) && (
+          {!isAnalyzing && showResults && (
             <FinalResultsSection
               formattedFinalResults={formattedFinalResults}
               mariagePairs={mariagePairs}
