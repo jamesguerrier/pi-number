@@ -27,42 +27,16 @@ const DB_NUMBER_FIELDS: (keyof Omit<DatabaseRecord, 'id' | 'created_at' | 'compl
 ];
 
 /**
- * Helper function to get the digits of a number (0-99).
- */
-function getDigits(n: number): Set<number> {
-  const s = String(n).padStart(2, '0'); 
-  const digits = new Set<number>();
-  digits.add(parseInt(s[0]));
-  digits.add(parseInt(s[1]));
-  return digits;
-}
-
-/**
  * Checks if a database number (dbNum) matches any number in the target set (targetNums)
- * based on the "not strict" rule (direct match or shared digit).
+ * based on the "strict" rule (direct match only).
  * @param dbNum The number retrieved from the database (0-99).
  * @param targetNums The array of numbers from the analysis set (0-99).
  * @returns The matching database number if a match is found, otherwise null.
  */
 function checkMatch(dbNum: number, targetNums: number[]): number | null {
-  // 1. Direct Match
+  // Strict Match: Only return a match if the database number is directly included in the target numbers.
   if (targetNums.includes(dbNum)) {
     return dbNum;
-  }
-
-  // 2. "Not Strict" Digit Match
-  const dbDigits = getDigits(dbNum);
-  
-  for (const targetNum of targetNums) {
-    const targetDigits = getDigits(targetNum);
-    
-    // Check for shared digits
-    for (const dbDigit of dbDigits) {
-      if (targetDigits.has(dbDigit)) {
-        // Found a shared digit, this is a "not strict" match.
-        return dbNum;
-      }
-    }
   }
   
   return null;
