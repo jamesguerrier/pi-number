@@ -54,17 +54,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    let isMounted = true;
+    
+    const handleSession = (session: Session | null) => {
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
-      setIsLoading(false);
 
       if (session?.user) {
         fetchProfile(session.user.id);
       } else {
         setProfile(null);
       }
+    };
 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      handleSession(session);
+      
       if (event === 'SIGNED_IN' && pathname === '/login') {
         router.push('/new-york'); // Redirect signed-in users from login page
         toast.success("Welcome back!");
@@ -80,16 +87,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-            fetchProfile(session.user.id);
-        }
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+        handleSession(initialSession);
         setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+        isMounted = false;
+        subscription.unsubscribe();
+    };
   }, [router, pathname, fetchProfile]);
 
   // Handle routing protection
