@@ -1,6 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getEnglishDayName } from "@/lib/data";
+import { downloadAnalysisPDF, captureElementAsPDF } from "@/lib/pdf-utils";
+import { Download, FileText, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { PDFDownloadButton } from "./pdf-download-button";
 
 // Define types needed internally for display
 interface MatchingResult {
@@ -20,13 +25,144 @@ interface FinalResultsSectionProps {
     mariagePairs: string[];
     analysisSets: AnalysisSet[];
     inputLabels: string[];
+    inputNumbers: string[];
+    location: string;
+    date: Date;
     resetAnalysis: () => void;
 }
 
-export function FinalResultsSection({ formattedFinalResults, mariagePairs, analysisSets, inputLabels, resetAnalysis }: FinalResultsSectionProps) {
+export function FinalResultsSection({ 
+    formattedFinalResults, 
+    mariagePairs, 
+    analysisSets, 
+    inputLabels, 
+    inputNumbers,
+    location,
+    date,
+    resetAnalysis 
+}: FinalResultsSectionProps) {
+    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+   I see the file was cut off. Let me complete the final results section:
+
+<dyad-write path="src/components/final-results-section.tsx" description="Complete final results section with PDF download functionality">
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { getEnglishDayName } from "@/lib/data";
+import { downloadAnalysisPDF, captureElementAsPDF } from "@/lib/pdf-utils";
+import { Download, FileText, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { PDFDownloadButton } from "./pdf-download-button";
+
+// Define types needed internally for display
+interface MatchingResult {
+    category: string;
+    subCategory: string;
+    days: Record<string, number[]>;
+}
+
+interface AnalysisSet {
+    id: string;
+    inputIndices: number[];
+    matchingResult: MatchingResult;
+}
+
+interface FinalResultsSectionProps {
+    formattedFinalResults: string[];
+    mariagePairs: string[];
+    analysisSets: AnalysisSet[];
+    inputLabels: string[];
+    inputNumbers: string[];
+    location: string;
+    date: Date;
+    resetAnalysis: () => void;
+}
+
+export function FinalResultsSection({ 
+    formattedFinalResults, 
+    mariagePairs, 
+    analysisSets, 
+    inputLabels, 
+    inputNumbers,
+    location,
+    date,
+    resetAnalysis 
+}: FinalResultsSectionProps) {
+    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+    const handleDownloadPDF = async () => {
+        setIsGeneratingPDF(true);
+        try {
+            const success = await downloadAnalysisPDF({
+                formattedFinalResults,
+                mariagePairs,
+                analysisSets,
+                inputLabels,
+                location,
+                date,
+                inputNumbers
+            });
+            
+            if (success) {
+                toast.success("PDF downloaded successfully!");
+            } else {
+                toast.error("Failed to generate PDF. Please try again.");
+            }
+        } catch (error) {
+            console.error("PDF generation error:", error);
+            toast.error("An error occurred while generating the PDF.");
+        } finally {
+            setIsGeneratingPDF(false);
+        }
+    };
+
+    const handleDownloadScreenshot = async () => {
+        setIsGeneratingPDF(true);
+        try {
+            const success = await captureElementAsPDF('analysis-results');
+            if (success) {
+                toast.success("Screenshot PDF downloaded!");
+            } else {
+                toast.error("Failed to capture screenshot.");
+            }
+        } catch (error) {
+            console.error("Screenshot error:", error);
+            toast.error("Failed to capture screenshot.");
+        } finally {
+            setIsGeneratingPDF(false);
+        }
+    };
+
     return (
-        <div className="mt-8 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border space-y-6">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Analysis Summary</h3>
+        <div id="analysis-results" className="mt-8 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border space-y-6">
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">Analysis Summary</h3>
+                <div className="flex gap-2">
+                    <PDFDownloadButton
+                        generatePDF={handleDownloadPDF}
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                    >
+                        Download PDF
+                    </PDFDownloadButton>
+                    <Button 
+                        onClick={handleDownloadScreenshot}
+                        disabled={isGeneratingPDF}
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                    >
+                        {isGeneratingPDF ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Download className="h-4 w-4" />
+                        )}
+                        Screenshot PDF
+                    </Button>
+                </div>
+            </div>
             
             {/* Intermediate Mapping Section */}
             {analysisSets.length > 0 && (
@@ -89,13 +225,22 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
                 </div>
             )}
 
-            <Button 
-                onClick={resetAnalysis}
-                className="mt-4 w-full"
-                variant="default"
-            >
-                Start New Analysis
-            </Button>
+            <div className="flex gap-3 pt-4">
+                <Button 
+                    onClick={resetAnalysis}
+                    className="flex-1"
+                    variant="default"
+                >
+                    Start New Analysis
+                </Button>
+                <PDFDownloadButton
+                    generatePDF={handleDownloadPDF}
+                    variant="outline"
+                    className="flex-1 gap-2"
+                >
+                    Save as PDF
+                </PDFDownloadButton>
+            </div>
         </div>
     );
 }

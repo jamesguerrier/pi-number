@@ -179,6 +179,9 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
               mariagePairs={mariagePairs}
               analysisSets={analysisSets}
               inputLabels={inputLabels}
+              inputNumbers={numbers}
+              location={location}
+              date={date || new Date()}
               resetAnalysis={resetAnalysis}
             />
           )}
