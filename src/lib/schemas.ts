@@ -20,3 +20,12 @@ export const DatabaseRecordSchema = DataEntrySchema.extend({
 });
 
 export type DatabaseRecord = z.infer<typeof DatabaseRecordSchema>;
+
+// --- Profile Schema ---
+export const ProfileSchema = z.object({
+  first_name: z.string().min(1, "First name is required").max(50),
+  last_name: z.string().max(50).optional().nullable(),
+  avatar_url: z.string().url("Must be a valid URL").optional().nullable().or(z.literal('')),
+});
+
+export type ProfileFormValues = z.infer<typeof ProfileSchema>;
