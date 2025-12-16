@@ -61,6 +61,8 @@ export async function performDatabaseAnalysis(
   
   const rawFinalResults: string[] = [];
 
+  console.log(`--- Starting 5-Week Analysis for ${locationTableName} (Base Date: ${format(baseDate, 'PPP')}) ---`);
+
   for (const currentSet of analysisSets) {
     const { days } = currentSet.matchingResult;
     const dayKeys = Object.keys(days); // e.g., ['samedi', 'dimanche']
@@ -70,6 +72,8 @@ export async function performDatabaseAnalysis(
     const frenchDay1 = dayKeys[0];
     const frenchDay2 = dayKeys[1];
     
+    console.log(`\nProcessing Set: ${currentSet.id} (Days: ${frenchDay1}, ${frenchDay2})`);
+
     // Iterate through 5 weeks back (weeksBack = 1 to 5)
     for (let weeksBack = 1; weeksBack <= 5; weeksBack++) {
       const weekDates = getPreviousWeekDates(baseDate, frenchDay1, frenchDay2, weeksBack);
@@ -79,6 +83,8 @@ export async function performDatabaseAnalysis(
       
       const date1String = format(date1, 'yyyy-MM-dd');
       const date2String = format(date2, 'yyyy-MM-dd');
+
+      console.log(`  Week ${weeksBack}: Querying dates ${date1String} (${frenchDay1}) and ${date2String} (${frenchDay2})`);
 
       // 1. Fetch records for both dates in this week
       const { data: records, error } = await supabase
@@ -92,7 +98,7 @@ export async function performDatabaseAnalysis(
       }
       
       if (!records || records.length === 0) {
-        // No historical data found for this week
+        console.log(`  Week ${weeksBack}: No historical data found for these dates.`);
         continue;
       }
 
@@ -109,6 +115,9 @@ export async function performDatabaseAnalysis(
         const currentFrenchDay = isDay1 ? frenchDay1 : frenchDay2;
         const targetNumbers = days[currentFrenchDay]; // The numbers we are looking for in this day's record
         
+        console.log(`    Found Record for ${recordDate} (${currentFrenchDay}). Target Numbers: [${targetNumbers.join(', ')}]`);
+        console.log(`    Record Data:`, record);
+
         // 3. Compare all database number fields against the target numbers
         for (const field of DB_NUMBER_FIELDS) {
           const dbNum = record[field];
@@ -123,12 +132,15 @@ export async function performDatabaseAnalysis(
                 // Record the actual number found in the database (dbNum), not the target number.
                 rawFinalResults.push(`${inputLabel}: Week ${weeksBack}: ${dbNum}`);
               });
+              console.log(`      HIT! Field: ${field}, DB Value: ${dbNum}`);
             }
           }
         }
       }
     }
   }
+  
+  console.log(`--- Analysis Complete. Total Hits: ${rawFinalResults.length} ---`);
 
   return rawFinalResults;
 }
