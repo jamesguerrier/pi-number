@@ -5,6 +5,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { isRateLimitError, handleAuthError } from '@/lib/auth-utils';
 
 export interface Profile {
   id: string;
@@ -21,6 +22,8 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   isLoading: boolean;
+  rateLimitError: string | null;
+  clearRateLimitError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,11 +35,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [rateLimitError, setRateLimitError] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
+  const clearRateLimitError = useCallback(() => {
+    setRateLimitError(null);
+  }, []);
+
   const fetchProfile = useCallback(async (userId: string) => {
-    // Ensure we have a user ID before attempting to fetch the profile
     if (!userId) {
       console.log("No user ID provided to fetchProfile");
       return;
@@ -45,12 +52,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log(`Fetching profile for user: ${userId}`);
       
-      // Use maybeSingle instead of single to avoid throwing on empty results
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle(); // Changed from .single() to .maybeSingle()
+        .maybeSingle();
 
       if (error) {
         console.error("Supabase error fetching profile:", {
@@ -59,6 +65,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           details: error.details,
           hint: error.hint
         });
+        
+        // Check if it's a rate limit error
+        if (isRateLimitError(error)) {
+          const message = handleAuthError(error);
+          setRateLimitError(message);
+          return;
+        }
         
         // If profile doesn't exist, create it
         console.log("Profile not found, attempting to create one...");
@@ -76,6 +89,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
         if (createError) {
           console.error("Failed to create profile:", createError);
+          // Check if this is also a rate limit error
+          if (isRateLimitError(createError)) {
+            const message = handleAuthError(createError);
+            setRateLimitError(message);
+          }
           // Use fallback profile
           const fallbackProfile = {
             id: userId,
@@ -112,6 +130,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
         if (createError) {
           console.error("Failed to create profile:", createError);
+          if (isRateLimitError(createError)) {
+            const message = handleAuthError(createError);
+            setRateLimitError(message);
+          }
           setProfile(null);
         } else {
           console.log("Profile created successfully:", newProfile);
@@ -180,8 +202,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log("Initial session check:", initialSession?.user?.id);
             handleSession(initialSession);
             setIsLoading(false);
+        }).catch((error) => {
+            console.error("Error getting initial session:", error);
+            if (isRateLimitError(error)) {
+              const message = handleAuthError(error);
+              setRateLimitError(message);
+            }
+            setIsLoading(false);
         });
-    }, 200); // Increased delay to 200ms
+    }, 200);
 
     return () => {
         isMounted = false;
@@ -205,7 +234,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, isLoading }}>
+    <AuthContext.Provider value={{ 
+      session, 
+      user, 
+      profile, 
+      isLoading, 
+      rateLimitError, 
+      clearRateLimitError 
+    }}>
       {children}
     </AuthContext.Provider>
   );
