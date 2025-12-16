@@ -36,6 +36,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const fetchProfile = useCallback(async (userId: string) => {
+    // Ensure we have a user ID before attempting to fetch the profile
+    if (!userId) return;
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -44,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error && error.code !== 'PGRST116') { // PGRST116 means "no rows found"
       console.error("Error fetching profile:", error);
-      toast.error("Failed to load user profile.");
+      // Do not show toast here, as it might spam if it's a persistent 406 error
       setProfile(null);
     } else if (data) {
       setProfile(data as Profile);
@@ -60,17 +63,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!isMounted) return;
       
       setSession(session);
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
 
-      if (session?.user) {
-        fetchProfile(session.user.id);
+      if (currentUser) {
+        // Only fetch profile if we have a user
+        fetchProfile(currentUser.id);
       } else {
         setProfile(null);
       }
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Add toast for debugging the sign-out issue
+      // Log all events for debugging
       if (event !== 'INITIAL_SESSION') {
         toast.info(`Auth Event: ${event}`);
       }
@@ -92,10 +97,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Initial session check
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-        handleSession(initialSession);
-        setIsLoading(false);
-    });
+    // Use a slight delay to ensure the client has fully initialized and processed any stored tokens
+    setTimeout(() => {
+        supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+            handleSession(initialSession);
+            setIsLoading(false);
+        });
+    }, 100); // 100ms delay
 
     return () => {
         isMounted = false;
