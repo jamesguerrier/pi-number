@@ -47,18 +47,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       // PGRST116 means "no rows found" (e.g., profile trigger failed or user is new)
-      if (error.code !== 'PGRST116') { 
+      if (error.code === 'PGRST116') { 
+        console.log("Profile not found, creating one...");
+        
+        // Create a basic profile for the user
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: userId,
+              email: user?.email || null,
+              first_name: user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User',
+              last_name: user?.user_metadata?.last_name || null,
+              avatar_url: null
+            }
+          ])
+          .select()
+          .single();
+
+        if (createError) {
+          console.error("Error creating profile:", createError);
+          toast.error(`Failed to create user profile: ${createError.message}`);
+          setProfile(null);
+        } else if (newProfile) {
+          setProfile(newProfile as Profile);
+          toast.success("Profile created successfully!");
+        }
+      } else {
         console.error("Error fetching profile:", error);
         // Show a toast for critical errors (like RLS failure 406)
         toast.error(`Failed to load user profile: ${error.message}. Check RLS policies.`);
+        setProfile(null);
       }
-      setProfile(null);
     } else if (data) {
       setProfile(data as Profile);
     } else {
       setProfile(null);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     let isMounted = true;
