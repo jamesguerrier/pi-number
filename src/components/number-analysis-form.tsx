@@ -71,6 +71,7 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
 
     setIsAnalyzing(true);
     setRawFinalResults([]); // Clear previous results
+    setAnalysisSets([]); // Clear previous sets
 
     // 1. Map input numbers to unique analysis sets
     const uniqueSetsMap = new Map<string, { indices: number[], result: MatchingResult }>();
@@ -106,10 +107,11 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
       matchingResult: data.result,
     }));
     
+    // Set the sets immediately so we can display them later
     setAnalysisSets(newAnalysisSets);
     
     if (newAnalysisSets.length > 0) {
-      // 2. Perform the full database analysis
+      // 2. Perform the full database analysis (5 weeks)
       const results = await performDatabaseAnalysis(
         date,
         tableName,
@@ -120,6 +122,7 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
       
       setRawFinalResults(results);
     } else {
+      // If no sets were found, we still stop loading and show results (which will be empty)
       alert("No matching data found for entered numbers.");
     }
     
@@ -134,7 +137,8 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
     setIsAnalyzing(false);
   };
   
-  const showResults = rawFinalResults.length > 0 || analysisSets.length > 0;
+  // Show results if analysisSets were calculated AND we are not currently analyzing
+  const showResults = analysisSets.length > 0 && !isAnalyzing;
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
@@ -173,6 +177,8 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
             <FinalResultsSection
               formattedFinalResults={formattedFinalResults}
               mariagePairs={mariagePairs}
+              analysisSets={analysisSets}
+              inputLabels={inputLabels}
               resetAnalysis={resetAnalysis}
             />
           )}

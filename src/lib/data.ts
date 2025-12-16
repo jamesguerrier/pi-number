@@ -123,22 +123,7 @@ export function findNumberInData(number: number) {
   return results;
 }
 
-// Function to get French day names
-export function getFrenchDayName(englishDay: string): string {
-  const dayMap: Record<string, string> = {
-    lundi: "Monday",
-    mardi: "Tuesday",
-    mercredi: "Wednesday",
-    jeudi: "Thursday",
-    vendredi: "Friday",
-    samedi: "Saturday",
-    dimanche: "Sunday"
-  };
-  
-  return dayMap[englishDay] || englishDay;
-}
-
-// Function to get English day names from French
+// Function to get English day names from French keys
 export function getEnglishDayName(frenchDay: string): string {
   const dayMap: Record<string, string> = {
     lundi: "Monday",
@@ -150,5 +135,5 @@ export function getEnglishDayName(frenchDay: string): string {
     dimanche: "Sunday"
   };
   
-  return dayMap[frenchDay] || frenchDay;
+  return dayMap[frenchDay.toLowerCase()] || frenchDay;
 }
