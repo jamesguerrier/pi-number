@@ -92,7 +92,7 @@ export function FinalResultsSection({
         <div id="analysis-results" className="mt-8 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border space-y-6">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">Analysis Summary</h3>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                     <PDFDownloadButton
                         generatePDF={handleDownloadPDF}
                         variant="outline"
@@ -179,7 +179,7 @@ export function FinalResultsSection({
                 </div>
             )}
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <Button 
                     onClick={resetAnalysis}
                     className="flex-1"
