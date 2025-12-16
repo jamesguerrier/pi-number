@@ -70,6 +70,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Add toast for debugging the sign-out issue
+      if (event !== 'INITIAL_SESSION') {
+        toast.info(`Auth Event: ${event}`);
+      }
+      
       handleSession(session);
       
       if (event === 'SIGNED_IN' && pathname === '/login') {
