@@ -35,56 +35,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string, userEmail?: string) => {
     // Ensure we have a user ID before attempting to fetch the profile
     if (!userId) return;
     
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (error) {
-      // PGRST116 means "no rows found" (e.g., profile trigger failed or user is new)
-      if (error.code === 'PGRST116') { 
-        console.log("Profile not found, creating one...");
-        
-        // Create a basic profile for the user
-        const { data: newProfile, error: createError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: userId,
-              email: user?.email || null,
-              first_name: user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User',
-              last_name: user?.user_metadata?.last_name || null,
-              avatar_url: null
+      if (error) {
+        // PGRST116 means "no rows found" (e.g., profile trigger failed or user is new)
+        if (error.code === 'PGRST116') { 
+          console.log("Profile not found, attempting to create one...");
+          
+          // Try to create a basic profile for the user
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: userId,
+                email: userEmail || null,
+                first_name: userEmail?.split('@')[0] || 'User',
+                last_name: null,
+                avatar_url: null
+              }
+            ])
+            .select()
+            .single();
+
+          if (createError) {
+            console.error("Error creating profile:", createError);
+            // Don't show error toast for RLS failures - just log and continue
+            if (!createError.message.includes('row-level security')) {
+              toast.error(`Failed to create user profile: ${createError.message}`);
             }
-          ])
-          .select()
-          .single();
-
-        if (createError) {
-          console.error("Error creating profile:", createError);
-          toast.error(`Failed to create user profile: ${createError.message}`);
+            // Set a minimal profile object so the app can continue
+            setProfile({
+              id: userId,
+              first_name: userEmail?.split('@')[0] || 'User',
+              last_name: null,
+              avatar_url: null,
+              email: userEmail || null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          } else if (newProfile) {
+            setProfile(newProfile as Profile);
+            toast.success("Profile created successfully!");
+          }
+        } else {
+          console.error("Error fetching profile:", error);
+          // Don't block the app on profile errors
           setProfile(null);
-        } else if (newProfile) {
-          setProfile(newProfile as Profile);
-          toast.success("Profile created successfully!");
         }
+      } else if (data) {
+        setProfile(data as Profile);
       } else {
-        console.error("Error fetching profile:", error);
-        // Show a toast for critical errors (like RLS failure 406)
-        toast.error(`Failed to load user profile: ${error.message}. Check RLS policies.`);
         setProfile(null);
       }
-    } else if (data) {
-      setProfile(data as Profile);
-    } else {
+    } catch (err) {
+      console.error("Unexpected error in fetchProfile:", err);
+      // Don't block the app on unexpected errors
       setProfile(null);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -98,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (currentUser) {
         // Only fetch profile if we have a user
-        fetchProfile(currentUser.id);
+        fetchProfile(currentUser.id, currentUser.email);
       } else {
         setProfile(null);
       }
@@ -107,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       // Log all events for debugging
       if (event !== 'INITIAL_SESSION') {
-        toast.info(`Auth Event: ${event}`);
+        console.log(`Auth Event: ${event}`);
       }
       
       handleSession(session);
