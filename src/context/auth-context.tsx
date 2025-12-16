@@ -45,9 +45,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .eq('id', userId)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 means "no rows found"
-      console.error("Error fetching profile:", error);
-      // Do not show toast here, as it might spam if it's a persistent 406 error
+    if (error) {
+      // PGRST116 means "no rows found" (e.g., profile trigger failed or user is new)
+      if (error.code !== 'PGRST116') { 
+        console.error("Error fetching profile:", error);
+        // Show a toast for critical errors (like RLS failure 406)
+        toast.error(`Failed to load user profile: ${error.message}. Check RLS policies.`);
+      }
       setProfile(null);
     } else if (data) {
       setProfile(data as Profile);
@@ -103,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             handleSession(initialSession);
             setIsLoading(false);
         });
-    }, 100); // 100ms delay
+    }, 200); // Increased delay to 200ms
 
     return () => {
         isMounted = false;
