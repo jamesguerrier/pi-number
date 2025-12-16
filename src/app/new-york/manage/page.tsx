@@ -1,22 +1,18 @@
 "use client";
 
 import { DataManagementPage } from "@/components/data-management-page";
-import { useAuth } from "@/context/auth-context";
 import { Loader2 } from "lucide-react";
+import { useProtectedRoute } from "@/hooks/use-protected-route";
 
 export default function NewYorkManagePage() {
-  const { isLoading, session } = useAuth();
+  const { isLoading, isAuthenticated } = useProtectedRoute();
 
-  if (isLoading) {
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
-  }
-
-  if (!session) {
-    return null;
   }
 
   return (

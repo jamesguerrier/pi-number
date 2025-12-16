@@ -6,13 +6,13 @@ import { ThemeToggle } from "./theme-toggle"
 import { Button } from "./ui/button"
 import { LogOut, User, UserPlus, Settings } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
-import { supabase } from "@/integrations/supabase/client"
-import { toast } from "sonner"
+import { useAuthActions } from "@/hooks/use-auth-actions"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export function MainNav() {
   const { session, profile } = useAuth();
+  const { signOut } = useAuthActions();
   
   const navItems = [
     { href: "/new-york", label: "New York" },
@@ -20,12 +20,10 @@ export function MainNav() {
   ]
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Failed to sign out: " + error.message);
-    } else {
-      // Redirection handled by AuthProvider
-      toast.success("Successfully signed out.");
+    try {
+      await signOut();
+    } catch (error) {
+      // Error is already handled by useAuthActions
     }
   }
   

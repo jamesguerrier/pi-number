@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { MainNav } from "@/components/main-nav";
-import { AuthProvider } from "@/context/auth-context";
+import { AuthProvider } from "@/context/auth-provider";
 import { GlobalRateLimitAlert } from "@/components/global-rate-limit-alert";
 
 const geistSans = Geist({

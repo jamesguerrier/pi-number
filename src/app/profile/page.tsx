@@ -1,28 +1,24 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useAuth } from "@/context/auth-context";
 import { Loader2, User } from "lucide-react";
 import { ProfileForm } from "@/components/profile-form";
+import { useProtectedRoute } from "@/hooks/use-protected-route";
+import { useAuth } from "@/context/auth-context";
 
 export default function ProfilePage() {
-  const { isLoading, session, profile } = useAuth();
+  const { isLoading, isAuthenticated } = useProtectedRoute();
+  const { profile } = useAuth();
 
-  if (isLoading) {
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
-
-  if (!session) {
-    // Redirection handled by AuthProvider
-    return null;
-  }
   
   if (!profile) {
-    // This should ideally not happen if the trigger works, but handle the case where profile data is missing.
     return (
       <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center p-4">
         <Card className="w-full max-w-lg shadow-xl">

@@ -6,18 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Loader2, User as UserIcon } from "lucide-react";
-import { toast } from "sonner";
 import { ProfileFormValues, ProfileSchema } from "@/lib/schemas";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth, Profile } from "@/context/auth-context";
+import { useAuth } from "@/context/auth-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuthActions } from "@/hooks/use-auth-actions";
 
 interface ProfileFormProps {
-  initialProfile: Profile;
+  initialProfile: any;
 }
 
 export function ProfileForm({ initialProfile }: ProfileFormProps) {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
+  const { updateProfile } = useAuthActions();
   
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(ProfileSchema),
@@ -31,26 +31,20 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
 
   async function onSubmit(values: ProfileFormValues) {
     if (!user) {
-      toast.error("Authentication error. Please sign in again.");
-      return;
+      throw new Error("Authentication error. Please sign in again.");
     }
     
-    const payload = {
-      first_name: values.first_name,
-      last_name: values.last_name || null,
-      avatar_url: values.avatar_url || null,
-      updated_at: new Date().toISOString(),
-    };
-
-    const { error } = await supabase
-      .from('profiles')
-      .update(payload)
-      .eq('id', user.id);
-
-    if (error) {
-      toast.error(`Failed to update profile: ${error.message}`);
-    } else {
-      toast.success("Profile updated successfully!");
+    try {
+      await updateProfile(user.id, {
+        first_name: values.first_name,
+        last_name: values.last_name || null,
+        avatar_url: values.avatar_url || null,
+      });
+      
+      // Refresh the profile in the auth context
+      await refreshProfile();
+    } catch (error) {
+      // Error is already handled by useAuthActions
     }
   }
 
@@ -96,7 +90,7 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
                   <Input 
                     placeholder="Doe" 
                     {...field} 
-                    value={field.value || ""} // Fix: Coerce null/undefined to empty string
+                    value={field.value || ""}
                   />
                 </FormControl>
                 <FormMessage />
@@ -115,7 +109,7 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
                 <Input 
                   placeholder="https://example.com/avatar.jpg" 
                   {...field} 
-                  value={field.value || ""} // Fix: Coerce null/undefined to empty string
+                  value={field.value || ""}
                 />
               </FormControl>
               <FormMessage />
