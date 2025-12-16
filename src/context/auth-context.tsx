@@ -37,45 +37,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = useCallback(async (userId: string) => {
     // Ensure we have a user ID before attempting to fetch the profile
-    if (!userId) return;
+    if (!userId) {
+      console.log("No user ID provided to fetchProfile");
+      return;
+    }
     
     try {
       console.log(`Fetching profile for user: ${userId}`);
       
+      // Use maybeSingle instead of single to avoid throwing on empty results
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle(); // Changed from .single() to .maybeSingle()
 
       if (error) {
-        console.error("Error fetching profile details:", {
+        console.error("Supabase error fetching profile:", {
           code: error.code,
           message: error.message,
           details: error.details,
           hint: error.hint
         });
         
-        // Don't try to create profile - let the trigger handle it
-        // Just set a minimal profile for the app to work
-        const fallbackProfile = {
-          id: userId,
-          first_name: user?.email?.split('@')[0] || 'User',
-          last_name: null,
-          avatar_url: null,
-          email: user?.email || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        
-        console.log("Using fallback profile:", fallbackProfile);
-        setProfile(fallbackProfile);
+        // If profile doesn't exist, create it
+        console.log("Profile not found, attempting to create one...");
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: user?.email || null,
+            first_name: user?.email?.split('@')[0] || 'User',
+            last_name: null,
+            avatar_url: null
+          })
+          .select()
+          .single();
+          
+        if (createError) {
+          console.error("Failed to create profile:", createError);
+          // Use fallback profile
+          const fallbackProfile = {
+            id: userId,
+            first_name: user?.email?.split('@')[0] || 'User',
+            last_name: null,
+            avatar_url: null,
+            email: user?.email || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          setProfile(fallbackProfile);
+        } else {
+          console.log("Profile created successfully:", newProfile);
+          setProfile(newProfile as Profile);
+        }
       } else if (data) {
         console.log("Profile fetched successfully:", data);
         setProfile(data as Profile);
       } else {
-        console.log("No profile data returned");
-        setProfile(null);
+        console.log("No profile data returned (maybeSingle returned null)");
+        // Profile doesn't exist, create it
+        console.log("Creating profile since it doesn't exist...");
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: user?.email || null,
+            first_name: user?.email?.split('@')[0] || 'User',
+            last_name: null,
+            avatar_url: null
+          })
+          .select()
+          .single();
+          
+        if (createError) {
+          console.error("Failed to create profile:", createError);
+          setProfile(null);
+        } else {
+          console.log("Profile created successfully:", newProfile);
+          setProfile(newProfile as Profile);
+        }
       }
     } catch (err) {
       console.error("Unexpected error in fetchProfile:", err);
