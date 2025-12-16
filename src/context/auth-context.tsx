@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const fetchProfile = useCallback(async (userId: string, userEmail?: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     // Ensure we have a user ID before attempting to fetch the profile
     if (!userId) return;
     
@@ -47,50 +47,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) {
-        // PGRST116 means "no rows found" (e.g., profile trigger failed or user is new)
-        if (error.code === 'PGRST116') { 
-          console.log("Profile not found, attempting to create one...");
-          
-          // Try to create a basic profile for the user
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert([
-              {
-                id: userId,
-                email: userEmail || null,
-                first_name: userEmail?.split('@')[0] || 'User',
-                last_name: null,
-                avatar_url: null
-              }
-            ])
-            .select()
-            .single();
-
-          if (createError) {
-            console.error("Error creating profile:", createError);
-            // Don't show error toast for RLS failures - just log and continue
-            if (!createError.message.includes('row-level security')) {
-              toast.error(`Failed to create user profile: ${createError.message}`);
-            }
-            // Set a minimal profile object so the app can continue
-            setProfile({
-              id: userId,
-              first_name: userEmail?.split('@')[0] || 'User',
-              last_name: null,
-              avatar_url: null,
-              email: userEmail || null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-          } else if (newProfile) {
-            setProfile(newProfile as Profile);
-            toast.success("Profile created successfully!");
-          }
-        } else {
-          console.error("Error fetching profile:", error);
-          // Don't block the app on profile errors
-          setProfile(null);
-        }
+        console.error("Error fetching profile:", error);
+        // Don't try to create profile - let the trigger handle it
+        // Just set a minimal profile for the app to work
+        setProfile({
+          id: userId,
+          first_name: user?.email?.split('@')[0] || 'User',
+          last_name: null,
+          avatar_url: null,
+          email: user?.email || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
       } else if (data) {
         setProfile(data as Profile);
       } else {
@@ -98,10 +66,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err) {
       console.error("Unexpected error in fetchProfile:", err);
-      // Don't block the app on unexpected errors
-      setProfile(null);
+      // Set a minimal profile object so the app can continue
+      setProfile({
+        id: userId,
+        first_name: user?.email?.split('@')[0] || 'User',
+        last_name: null,
+        avatar_url: null,
+        email: user?.email || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     let isMounted = true;
@@ -115,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (currentUser) {
         // Only fetch profile if we have a user
-        fetchProfile(currentUser.id, currentUser.email);
+        fetchProfile(currentUser.id);
       } else {
         setProfile(null);
       }
