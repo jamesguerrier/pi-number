@@ -43,55 +43,7 @@ export function FinalResultsSection({
 }: FinalResultsSectionProps) {
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
-   I see the file was cut off. Let me complete the final results section:
-
-<dyad-write path="src/components/final-results-section.tsx" description="Complete final results section with PDF download functionality">
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { getEnglishDayName } from "@/lib/data";
-import { downloadAnalysisPDF, captureElementAsPDF } from "@/lib/pdf-utils";
-import { Download, FileText, Loader2 } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
-import { PDFDownloadButton } from "./pdf-download-button";
-
-// Define types needed internally for display
-interface MatchingResult {
-    category: string;
-    subCategory: string;
-    days: Record<string, number[]>;
-}
-
-interface AnalysisSet {
-    id: string;
-    inputIndices: number[];
-    matchingResult: MatchingResult;
-}
-
-interface FinalResultsSectionProps {
-    formattedFinalResults: string[];
-    mariagePairs: string[];
-    analysisSets: AnalysisSet[];
-    inputLabels: string[];
-    inputNumbers: string[];
-    location: string;
-    date: Date;
-    resetAnalysis: () => void;
-}
-
-export function FinalResultsSection({ 
-    formattedFinalResults, 
-    mariagePairs, 
-    analysisSets, 
-    inputLabels, 
-    inputNumbers,
-    location,
-    date,
-    resetAnalysis 
-}: FinalResultsSectionProps) {
-    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-
-    const handleDownloadPDF = async () => {
+    const handleDownloadPDF = async (): Promise<boolean> => {
         setIsGeneratingPDF(true);
         try {
             const success = await downloadAnalysisPDF({
@@ -109,9 +61,11 @@ export function FinalResultsSection({
             } else {
                 toast.error("Failed to generate PDF. Please try again.");
             }
+            return success;
         } catch (error) {
             console.error("PDF generation error:", error);
             toast.error("An error occurred while generating the PDF.");
+            return false;
         } finally {
             setIsGeneratingPDF(false);
         }
