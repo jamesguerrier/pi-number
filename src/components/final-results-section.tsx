@@ -75,13 +75,13 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
                 )}
             </div>
 
-            {/* Mariage Section */}
+            {/* Mariage Section (Now Recurring Hits) */}
             {mariagePairs.length > 0 && (
                 <div className="space-y-2">
-                    <h4 className="font-semibold text-lg mb-2 border-b pb-1 text-purple-600 dark:text-purple-400">Mariage Pairs (Shared Digit)</h4>
+                    <h4 className="font-semibold text-lg mb-2 border-b pb-1 text-purple-600 dark:text-purple-400">Recurring Hits (Appeared &gt; 1 Time)</h4>
                     <div className="flex flex-wrap gap-3">
                         {mariagePairs.map((pair, index) => (
-                            <span key={index} className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full font-mono text-sm">
+                            <span key={index} className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full font-mono text-lg">
                                 {pair}
                             </span>
                         ))}
