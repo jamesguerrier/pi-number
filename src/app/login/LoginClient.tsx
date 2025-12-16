@@ -2,79 +2,34 @@
 
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { createClient } from '@supabase/supabase-js';
 import { CardContent } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect } from 'react';
-import { RateLimitAlert } from '@/components/ui/rate-limit-alert';
-import { useAuthRetry } from '@/hooks/use-auth-retry';
-import { isRateLimitError, handleAuthError } from '@/lib/auth-utils';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { useMemo } from 'react';
+
+// NOTE: We use hardcoded values here as a fallback/reference, but they should ideally 
+// be managed via environment variables in a real deployment.
+const SUPABASE_URL = "https://tgqljjfjwelpeansngju.supabase.co";
+// CORRECTED KEY: Removed the extra '9'
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRncWxqamZqd2VscGVhbnNuZ2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2ODU4OTUsImV4cCI6MjA4MTI2MTg5NX0.MbPYVHGgaULaDWup32e1WLFl9OjNAu45O-QV99ab1nU";
 
 interface LoginClientProps {
     view: 'sign_in' | 'sign_up' | 'forgotten_password' | 'update_password';
 }
 
 export default function LoginClient({ view }: LoginClientProps) {
-  const [rateLimitError, setRateLimitError] = useState<string | null>(null);
-  const { retryCount, isRetrying, canRetry, getTimeUntilRetry, recordError, resetRetry } = useAuthRetry();
-
-  // Listen for auth state changes to detect rate limit errors
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Reset rate limit error on successful auth
-      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-        setRateLimitError(null);
-        resetRetry();
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [resetRetry]);
-
-  // Handle auth errors from the Auth component
-  const handleAuthErrorWrapper = (error: any) => {
-    if (isRateLimitError(error)) {
-      const message = handleAuthError(error);
-      setRateLimitError(message);
-      recordError();
-      return;
-    }
+  
+  // Initialize Supabase client lazily using useMemo to ensure it only runs 
+  // when the component is mounted on the client (since this file is dynamically imported with ssr: false).
+  const supabase = useMemo(() => {
+    // Use environment variables if available, otherwise use the hardcoded fallback
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || SUPABASE_PUBLISHABLE_KEY;
     
-    handleAuthError(error);
-  };
-
-  const handleRetry = () => {
-    if (canRetry()) {
-      setRateLimitError(null);
-      // Force a refresh of the auth UI
-      window.location.reload();
-    }
-  };
-
-  const timeUntilRetry = getTimeUntilRetry();
-  const canRetryNow = canRetry();
+    return createClient(url, key);
+  }, []);
 
   return (
-    <CardContent className="space-y-4">
-      {rateLimitError && (
-        <RateLimitAlert 
-          message={rateLimitError}
-          onRetry={canRetryNow ? handleRetry : undefined}
-          retryDisabled={!canRetryNow || isRetrying}
-        />
-      )}
-
-      {!canRetryNow && (
-        <div className="text-center text-sm text-muted-foreground p-3 bg-muted rounded-lg">
-          <RefreshCw className="h-4 w-4 animate-spin inline-block mr-2" />
-          {timeUntilRetry > 0 
-            ? `Retry available in ${timeUntilRetry} second${timeUntilRetry !== 1 ? 's' : ''}`
-            : 'Preparing retry...'
-          }
-        </div>
-      )}
-
+    <CardContent>
       <Auth
         supabaseClient={supabase}
         providers={[]}

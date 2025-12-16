@@ -5,8 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { MainNav } from "@/components/main-nav";
-import { AuthProvider } from "@/context/auth-provider";
-import { GlobalRateLimitAlert } from "@/components/global-rate-limit-alert";
+import { AuthProvider } from "@/context/auth-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,7 +39,6 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <GlobalRateLimitAlert />
             <MainNav />
             <main className="flex-grow">
               {children}
