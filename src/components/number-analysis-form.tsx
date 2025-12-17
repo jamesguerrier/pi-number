@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn, formatFinalResults, getUniqueNumbersFromRawResults, findMariagePairs, FormattedResult } from "@/lib/utils";
+import { cn, formatFinalResults, getUniqueNumbersFromRawResults, findMariagePairs } from "@/lib/utils";
 import { findNumberInData } from "@/lib/data";
 import { DateInputSection } from "./date-input-section";
 import { NumberInputSection } from "./number-input-section";
@@ -47,7 +47,7 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
   ];
 
   // Memoize the formatted results for display
-  const formattedFinalResults: FormattedResult[] = useMemo(() => {
+  const formattedFinalResults = useMemo(() => {
     return formatFinalResults(rawFinalResults);
   }, [rawFinalResults]);
   
