@@ -31,12 +31,12 @@ const DB_NUMBER_FIELDS: (keyof Omit<DatabaseRecord, 'id' | 'created_at' | 'compl
  * based on the "strict" rule (direct match only).
  * @param dbNum The number retrieved from the database (0-99).
  * @param targetNums The array of numbers from the analysis set (0-99).
- * @returns The matching database number if a match is found, otherwise null.
+ * @returns An object containing the matched number and match type, or null.
  */
-function checkMatch(dbNum: number, targetNums: number[]): number | null {
+function checkMatch(dbNum: number, targetNums: number[]): { number: number, type: 'strict' } | null {
   // Strict Match: Only return a match if the database number is directly included in the target numbers.
   if (targetNums.includes(dbNum)) {
-    return dbNum;
+    return { number: dbNum, type: 'strict' };
   }
   
   return null;
@@ -49,7 +49,8 @@ function checkMatch(dbNum: number, targetNums: number[]): number | null {
  * @param locationTableName The name of the database table (e.g., 'new_york_data').
  * @param analysisSets The sets derived from the user's input numbers.
  * @param inputLabels The labels for the 6 input fields.
- * @returns An array of raw result strings (e.g., "1er-AM: Week 3: 50").
+ * @param inputNumbers The original 6 input numbers as strings
+ * @returns An array of raw result strings (e.g., "1er-AM: Week 3: 50|strict").
  */
 export async function performDatabaseAnalysis(
   baseDate: Date,
@@ -125,14 +126,14 @@ export async function performDatabaseAnalysis(
           
           if (dbNum !== null && dbNum !== undefined) {
             // Use the combined list for matching
-            const matchedNumber = checkMatch(dbNum, combinedTargetNumbers);
+            const matchResult = checkMatch(dbNum, combinedTargetNumbers);
             
-            if (matchedNumber !== null) {
+            if (matchResult !== null) {
               // A match was found! Record this hit for ALL original input numbers that generated this set.
               currentSet.inputIndices.forEach(inputIndex => {
                 const inputLabel = inputLabels[inputIndex];
-                // Record the actual number found in the database (dbNum).
-                rawFinalResults.push(`${inputLabel}: Week ${weeksBack}: ${dbNum}`);
+                // Format: "LABEL: Week X: NUMBER|TYPE"
+                rawFinalResults.push(`${inputLabel}: Week ${weeksBack}: ${matchResult.number}|${matchResult.type}`);
               });
               console.log(`      HIT! Field: ${field}, DB Value: ${dbNum}`);
             }

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getEnglishDayName } from "@/lib/data";
+import { FormattedResult, cn } from "@/lib/utils";
 
 // Define types needed internally for display
 interface MatchingResult {
@@ -16,7 +17,7 @@ interface AnalysisSet {
 }
 
 interface FinalResultsSectionProps {
-    formattedFinalResults: string[];
+    formattedFinalResults: FormattedResult[]; // Updated type
     mariagePairs: string[];
     analysisSets: AnalysisSet[];
     inputLabels: string[];
@@ -65,8 +66,17 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
                 {formattedFinalResults.length > 0 ? (
                     <div className="flex flex-wrap gap-3">
                         {formattedFinalResults.map((result, index) => (
-                            <span key={index} className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full font-mono text-lg">
-                                {result}
+                            <span 
+                                key={index} 
+                                className={cn(
+                                    "px-3 py-1 rounded-full font-mono text-lg",
+                                    // Conditional styling based on match type
+                                    result.type === 'strict' 
+                                        ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" // Highlight strict matches
+                                        : "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200" // Default/other matches
+                                )}
+                            >
+                                {result.display}
                             </span>
                         ))}
                     </div>
