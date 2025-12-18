@@ -102,7 +102,11 @@ export async function performDatabaseAnalysis(
     const frenchDay1 = dayKeys[0];
     const frenchDay2 = dayKeys[1];
     
-    // NOTE: combinedTargetNumbers is no longer needed due to strict day matching requirement.
+    // Calculate combined target numbers for the entire set
+    const combinedTargetNumbers = [
+        ...days[frenchDay1],
+        ...days[frenchDay2]
+    ];
     
     // Iterate through 5 weeks back (weeksBack = 1 to 5)
     for (let weeksBack = 1; weeksBack <= 5; weeksBack++) {
@@ -133,22 +137,18 @@ export async function performDatabaseAnalysis(
       for (const record of records as DatabaseRecord[]) {
         const recordDate = record.complete_date;
         
-        // Determine which day of the set this record corresponds to
+        // Determine which day of the set this record corresponds to (needed for logging)
         const isDay1 = recordDate === date1String;
         const isDay2 = recordDate === date2String;
         
         if (!isDay1 && !isDay2) continue;
 
-        const currentFrenchDay = isDay1 ? frenchDay1 : frenchDay2;
-        // Get the target numbers specific to this historical day
-        const targetNumbers = days[currentFrenchDay]; 
-        
-        // 3. Compare all database number fields against the DAY-SPECIFIC target numbers
+        // 3. Compare all database number fields against the COMBINED target numbers
         for (const field of NY_FL_DB_NUMBER_FIELDS) {
           const dbNum = record[field];
           
           if (dbNum !== null && dbNum !== undefined) {
-            const matchResult = checkMatch(dbNum, targetNumbers);
+            const matchResult = checkMatch(dbNum, combinedTargetNumbers);
             
             if (matchResult !== null) {
               // A match was found! Record this hit for ALL original input numbers that generated this set.
@@ -219,7 +219,11 @@ export async function performGeorgiaDatabaseAnalysis(
     const frenchDay1 = dayKeys[0];
     const frenchDay2 = dayKeys[1];
     
-    // NOTE: combinedTargetNumbers is no longer needed due to strict day matching requirement.
+    // Calculate combined target numbers for the entire set
+    const combinedTargetNumbers = [
+        ...days[frenchDay1],
+        ...days[frenchDay2]
+    ];
     
     // Iterate through 5 weeks back (weeksBack = 1 to 5)
     for (let weeksBack = 1; weeksBack <= 5; weeksBack++) {
@@ -250,22 +254,18 @@ export async function performGeorgiaDatabaseAnalysis(
       for (const record of records as GeorgiaDatabaseRecord[]) {
         const recordDate = record.complete_date;
         
-        // Determine which day of the set this record corresponds to
+        // Determine which day of the set this record corresponds to (needed for logging)
         const isDay1 = recordDate === date1String;
         const isDay2 = recordDate === date2String;
         
         if (!isDay1 && !isDay2) continue;
 
-        const currentFrenchDay = isDay1 ? frenchDay1 : frenchDay2;
-        // Get the target numbers specific to this historical day
-        const targetNumbers = days[currentFrenchDay]; 
-        
-        // 3. Compare all database number fields against the DAY-SPECIFIC target numbers
+        // 3. Compare all database number fields against the COMBINED target numbers
         for (const field of GA_DB_NUMBER_FIELDS) {
           const dbNum = record[field];
           
           if (dbNum !== null && dbNum !== undefined) {
-            const matchResult = checkMatch(dbNum, targetNumbers);
+            const matchResult = checkMatch(dbNum, combinedTargetNumbers);
             
             if (matchResult !== null) {
               // A match was found! Record this hit for ALL original input numbers that generated this set.
