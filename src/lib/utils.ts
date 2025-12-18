@@ -5,38 +5,54 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export type FormattedResult = {
+  number: string; // The number string (e.g., '70')
+  count: number;
+  type: 'strict'; // Match type
+  display: string; // The final display string (e.g., '70 (2 times)')
+};
+
 /**
- * Takes an array of result strings, extracts the numbers, counts their occurrences,
- * and returns a formatted array of strings (e.g., "70 (2 times)").
- * The input strings are expected to be in the format: "LABEL: Week X (DATE1/DATE2): NUMBER"
+ * Takes an array of result strings, extracts the numbers and types, counts their occurrences,
+ * and returns a formatted array of objects for display.
+ * The input strings are expected to be in the format: "LABEL: Week X: NUMBER|TYPE"
  */
-export function formatFinalResults(results: string[]): string[] {
-  const numberCounts: Record<string, number> = {};
+export function formatFinalResults(results: string[]): FormattedResult[] {
+  // Key: "number|type" -> Value: count
+  const numberTypeCounts: Record<string, number> = {};
   
-  // 1. Extract numbers and count occurrences
+  // 1. Extract numbers, types, and count occurrences
   results.forEach(result => {
-    // Regex to extract the number at the end of the string
-    const match = result.match(/:\s*(\d+)$/);
-    if (match && match[1]) {
+    // Regex to extract the number and type at the end of the string
+    const match = result.match(/:\s*(\d+)\|(\w+)$/);
+    if (match && match[1] && match[2]) {
       const number = match[1];
-      numberCounts[number] = (numberCounts[number] || 0) + 1;
+      const type = match[2];
+      const key = `${number}|${type}`;
+      numberTypeCounts[key] = (numberTypeCounts[key] || 0) + 1;
     }
   });
 
-  // 2. Format the unique numbers with their counts
-  const formattedResults: string[] = [];
-  for (const [number, count] of Object.entries(numberCounts)) {
-    if (count > 1) {
-      formattedResults.push(`${number} (${count} times)`);
-    } else {
-      formattedResults.push(number);
-    }
+  // 2. Format the unique numbers with their counts and type
+  const formattedResults: FormattedResult[] = [];
+  
+  for (const [key, count] of Object.entries(numberTypeCounts)) {
+    const [number, type] = key.split('|');
+    
+    const display = count > 1 ? `${number} (${count} times)` : number;
+
+    formattedResults.push({
+      number,
+      count,
+      type: type as 'strict', // Assuming 'strict' for now based on analysis.ts
+      display
+    });
   }
 
   // Sort numerically for better presentation
   formattedResults.sort((a, b) => {
-    const numA = parseInt(a.split(' ')[0]);
-    const numB = parseInt(b.split(' ')[0]);
+    const numA = parseInt(a.number);
+    const numB = parseInt(b.number);
     return numA - numB;
   });
 
@@ -45,11 +61,13 @@ export function formatFinalResults(results: string[]): string[] {
 
 /**
  * Extracts unique numbers (as integers) from the raw result strings.
+ * Input strings are expected to be in the format: "LABEL: Week X: NUMBER|TYPE"
  */
 export function getUniqueNumbersFromRawResults(results: string[]): number[] {
   const uniqueNumbers = new Set<number>();
   results.forEach(result => {
-    const match = result.match(/:\s*(\d+)$/);
+    // Regex to extract the number before the pipe
+    const match = result.match(/:\s*(\d+)\|/);
     if (match && match[1]) {
       uniqueNumbers.add(parseInt(match[1]));
     }
@@ -115,4 +133,17 @@ export function findMariagePairs(numbers: number[]): string[] {
   }
   
   return results;
+}
+
+const ADMIN_EMAILS = [
+  "jamesguerrier72@gmail.com",
+  "flemingshiping@gmail.com",
+];
+
+/**
+ * Checks if the user's email is in the list of authorized admin emails.
+ */
+export function isUserAdmin(email: string | undefined | null): boolean {
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.toLowerCase());
 }
