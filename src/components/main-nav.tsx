@@ -15,6 +15,7 @@ export function MainNav() {
   const navItems = [
     { href: "/new-york", label: "New York" },
     { href: "/florida", label: "Florida" },
+    { href: "/georgia", label: "Georgia" }, // Added Georgia
   ]
 
   const handleSignOut = async () => {
