@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getEnglishDayName } from "@/lib/data";
-import { FormattedResult, cn } from "@/lib/utils";
+import { FormattedResult, cn, getUniqueNumbersFromRawResults } from "@/lib/utils";
 import { AnalysisLog } from "@/lib/schemas";
 import { StepLogViewer } from "./step-log-viewer";
+import { useRouter } from "next/navigation";
 
 // Define types needed internally for display
 interface MatchingResult {
@@ -23,11 +24,24 @@ interface FinalResultsSectionProps {
     mariagePairs: string[];
     analysisSets: AnalysisSet[];
     inputLabels: string[];
-    detailedLog: AnalysisLog; // New prop
+    detailedLog: AnalysisLog;
+    rawFinalResults: string[]; // Added raw results
     resetAnalysis: () => void;
 }
 
-export function FinalResultsSection({ formattedFinalResults, mariagePairs, analysisSets, inputLabels, detailedLog, resetAnalysis }: FinalResultsSectionProps) {
+export function FinalResultsSection({ formattedFinalResults, mariagePairs, analysisSets, inputLabels, detailedLog, rawFinalResults, resetAnalysis }: FinalResultsSectionProps) {
+    const router = useRouter();
+
+    const handleGoToVerify = () => {
+        const uniqueNumbers = getUniqueNumbersFromRawResults(rawFinalResults);
+        // Format numbers as a comma-separated string, ensuring 2 digits for consistency
+        const numberString = uniqueNumbers.map(n => String(n).padStart(2, '0')).join(',');
+        
+        if (numberString) {
+            router.push(`/verifier?setA=${numberString}`);
+        }
+    };
+
     return (
         <div className="mt-8 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border space-y-6">
             <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Analysis Summary</h3>
@@ -105,10 +119,18 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
             <div className="flex flex-col md:flex-row gap-3 pt-4">
                 <Button 
                     onClick={resetAnalysis}
-                    className="w-full md:w-1/2"
+                    className="w-full md:w-1/3"
                     variant="default"
                 >
                     Start New Analysis
+                </Button>
+                <Button 
+                    onClick={handleGoToVerify}
+                    className="w-full md:w-1/3"
+                    variant="secondary"
+                    disabled={formattedFinalResults.length === 0}
+                >
+                    Go to Verifier
                 </Button>
                 <StepLogViewer detailedLog={detailedLog} />
             </div>

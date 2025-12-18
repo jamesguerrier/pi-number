@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VERIFIER_DATA } from '@/lib/verifierData';
 import { cn } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation';
 
 interface MatchResult {
     matchA: number;
@@ -23,9 +24,18 @@ function parseInput(value: string): number[] {
 }
 
 export function VerifierTool() {
+  const searchParams = useSearchParams();
   const [inputA, setInputA] = useState('');
   const [inputB, setInputB] = useState('');
   const [results, setResults] = useState<MatchResult[]>([]);
+
+  useEffect(() => {
+    const setAFromUrl = searchParams.get('setA');
+    if (setAFromUrl) {
+      // Pre-populate inputA with the numbers passed from the analysis page
+      setInputA(setAFromUrl);
+    }
+  }, [searchParams]);
 
   const matchNumbers = () => {
     const A = parseInput(inputA);

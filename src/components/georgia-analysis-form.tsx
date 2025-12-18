@@ -182,7 +182,8 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
               mariagePairs={mariagePairs}
               analysisSets={analysisSets}
               inputLabels={inputLabels}
-              detailedLog={detailedLog} // Pass detailed log
+              detailedLog={detailedLog}
+              rawFinalResults={rawFinalResults}
               resetAnalysis={resetAnalysis}
             />
           )}
