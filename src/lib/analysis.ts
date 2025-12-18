@@ -102,12 +102,6 @@ export async function performDatabaseAnalysis(
     const frenchDay1 = dayKeys[0];
     const frenchDay2 = dayKeys[1];
     
-    // Calculate combined target numbers for the entire set
-    const combinedTargetNumbers = [
-        ...days[frenchDay1],
-        ...days[frenchDay2]
-    ];
-    
     // Iterate through 5 weeks back (weeksBack = 1 to 5)
     for (let weeksBack = 1; weeksBack <= 5; weeksBack++) {
       const weekDates = getPreviousWeekDates(baseDate, frenchDay1, frenchDay2, weeksBack);
@@ -143,12 +137,20 @@ export async function performDatabaseAnalysis(
         
         if (!isDay1 && !isDay2) continue;
 
-        // 3. Compare all database number fields against the COMBINED target numbers
+        // Determine the specific target numbers for this record's day (STRICT MATCHING)
+        let targetNumbersForRecord: number[] = [];
+        if (isDay1) {
+            targetNumbersForRecord = days[frenchDay1];
+        } else if (isDay2) {
+            targetNumbersForRecord = days[frenchDay2];
+        }
+
+        // 3. Compare all database number fields against the day-specific target numbers
         for (const field of NY_FL_DB_NUMBER_FIELDS) {
           const dbNum = record[field];
           
-          if (dbNum !== null && dbNum !== undefined) {
-            const matchResult = checkMatch(dbNum, combinedTargetNumbers);
+          if (dbNum !== null && dbNum !== undefined && targetNumbersForRecord.length > 0) {
+            const matchResult = checkMatch(dbNum, targetNumbersForRecord);
             
             if (matchResult !== null) {
               // A match was found! Record this hit for ALL original input numbers that generated this set.
@@ -219,12 +221,6 @@ export async function performGeorgiaDatabaseAnalysis(
     const frenchDay1 = dayKeys[0];
     const frenchDay2 = dayKeys[1];
     
-    // Calculate combined target numbers for the entire set
-    const combinedTargetNumbers = [
-        ...days[frenchDay1],
-        ...days[frenchDay2]
-    ];
-    
     // Iterate through 5 weeks back (weeksBack = 1 to 5)
     for (let weeksBack = 1; weeksBack <= 5; weeksBack++) {
       const weekDates = getPreviousWeekDates(baseDate, frenchDay1, frenchDay2, weeksBack);
@@ -260,12 +256,20 @@ export async function performGeorgiaDatabaseAnalysis(
         
         if (!isDay1 && !isDay2) continue;
 
-        // 3. Compare all database number fields against the COMBINED target numbers
+        // Determine the specific target numbers for this record's day (STRICT MATCHING)
+        let targetNumbersForRecord: number[] = [];
+        if (isDay1) {
+            targetNumbersForRecord = days[frenchDay1];
+        } else if (isDay2) {
+            targetNumbersForRecord = days[frenchDay2];
+        }
+
+        // 3. Compare all database number fields against the day-specific target numbers
         for (const field of GA_DB_NUMBER_FIELDS) {
           const dbNum = record[field];
           
-          if (dbNum !== null && dbNum !== undefined) {
-            const matchResult = checkMatch(dbNum, combinedTargetNumbers);
+          if (dbNum !== null && dbNum !== undefined && targetNumbersForRecord.length > 0) {
+            const matchResult = checkMatch(dbNum, targetNumbersForRecord);
             
             if (matchResult !== null) {
               // A match was found! Record this hit for ALL original input numbers that generated this set.
