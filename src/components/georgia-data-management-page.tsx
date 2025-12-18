@@ -73,7 +73,7 @@ export function GeorgiaDataManagementPage({ location, tableName }: GeorgiaDataMa
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <GeorgiaDataTable data={data} tableName={tableName} />
+              <GeorgiaDataTable data={data} tableName={tableName} onUpdate={fetchData} />
             )}
           </div>
         </CardContent>

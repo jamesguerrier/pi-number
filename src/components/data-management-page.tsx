@@ -73,7 +73,7 @@ export function DataManagementPage({ location, tableName }: DataManagementPagePr
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <DataTable data={data} tableName={tableName} />
+              <DataTable data={data} tableName={tableName} onUpdate={fetchData} />
             )}
           </div>
         </CardContent>

@@ -1,13 +1,15 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DatabaseRecord } from "@/lib/schemas";
-import { format, parseISO } from "date-fns";
+import { EditableDataRow } from "./editable-data-row";
 
 interface DataTableProps {
   data: DatabaseRecord[];
   tableName: string;
+  // Pass the fetch function down to trigger refresh after update
+  onUpdate: () => void; 
 }
 
-export function DataTable({ data, tableName }: DataTableProps) {
+export function DataTable({ data, tableName, onUpdate }: DataTableProps) {
   if (data.length === 0) {
     return <p className="text-center text-muted-foreground py-8">No data records found for {tableName}.</p>;
   }
@@ -25,24 +27,18 @@ export function DataTable({ data, tableName }: DataTableProps) {
             <TableHead>1st PM</TableHead>
             <TableHead>2nd PM</TableHead>
             <TableHead>3rd PM</TableHead>
-            <TableHead className="text-right">Created At</TableHead>
+            <TableHead className="text-right w-[100px]">Created At</TableHead>
+            <TableHead className="text-right w-[100px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.map((record) => (
-            <TableRow key={record.id}>
-              <TableCell className="font-medium">{format(parseISO(record.complete_date), 'MMM dd, yyyy')}</TableCell>
-              <TableCell>{record.date_number}</TableCell>
-              <TableCell>{record.first_am_day}</TableCell>
-              <TableCell>{record.second_am_day}</TableCell>
-              <TableCell>{record.third_am_day}</TableCell>
-              <TableCell>{record.first_pm_moon}</TableCell>
-              <TableCell>{record.second_pm_moon}</TableCell>
-              <TableCell>{record.third_pm_moon}</TableCell>
-              <TableCell className="text-right text-xs text-muted-foreground">
-                {format(new Date(record.created_at), 'PP')}
-              </TableCell>
-            </TableRow>
+            <EditableDataRow 
+              key={record.id} 
+              record={record} 
+              tableName={tableName} 
+              onUpdate={onUpdate} 
+            />
           ))}
         </TableBody>
       </Table>

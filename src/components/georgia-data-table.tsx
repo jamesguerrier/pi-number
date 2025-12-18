@@ -1,13 +1,14 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { GeorgiaDatabaseRecord } from "@/lib/schemas";
-import { format, parseISO } from "date-fns";
+import { GeorgiaEditableDataRow } from "./georgia-editable-data-row";
 
 interface GeorgiaDataTableProps {
   data: GeorgiaDatabaseRecord[];
   tableName: string;
+  onUpdate: () => void;
 }
 
-export function GeorgiaDataTable({ data, tableName }: GeorgiaDataTableProps) {
+export function GeorgiaDataTable({ data, tableName, onUpdate }: GeorgiaDataTableProps) {
   if (data.length === 0) {
     return <p className="text-center text-muted-foreground py-8">No data records found for {tableName}.</p>;
   }
@@ -31,30 +32,18 @@ export function GeorgiaDataTable({ data, tableName }: GeorgiaDataTableProps) {
             <TableHead>1st Night</TableHead>
             <TableHead>2nd Night</TableHead>
             <TableHead>3rd Night</TableHead>
-            <TableHead className="text-right">Created At</TableHead>
+            <TableHead className="text-right w-[100px]">Created At</TableHead>
+            <TableHead className="text-right w-[100px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.map((record) => (
-            <TableRow key={record.id}>
-              <TableCell className="font-medium">{format(parseISO(record.complete_date), 'MMM dd, yyyy')}</TableCell>
-              <TableCell>{record.date_number}</TableCell>
-              {/* Day */}
-              <TableCell>{record.first_day}</TableCell>
-              <TableCell>{record.second_day}</TableCell>
-              <TableCell>{record.third_day}</TableCell>
-              {/* Moon */}
-              <TableCell>{record.first_moon}</TableCell>
-              <TableCell>{record.second_moon}</TableCell>
-              <TableCell>{record.third_moon}</TableCell>
-              {/* Night */}
-              <TableCell>{record.first_night}</TableCell>
-              <TableCell>{record.second_night}</TableCell>
-              <TableCell>{record.third_night}</TableCell>
-              <TableCell className="text-right text-xs text-muted-foreground">
-                {format(new Date(record.created_at), 'PP')}
-              </TableCell>
-            </TableRow>
+            <GeorgiaEditableDataRow 
+              key={record.id} 
+              record={record} 
+              tableName={tableName} 
+              onUpdate={onUpdate} 
+            />
           ))}
         </TableBody>
       </Table>
