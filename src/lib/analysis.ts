@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getPreviousWeekDates } from "./dateUtils";
-import { DatabaseRecord, GeorgiaDatabaseRecord } from "./schemas";
+import { DatabaseRecord, GeorgiaDatabaseRecord, AnalysisLog, AnalysisLogEntry, HistoricalHit } from "./schemas";
 import { format } from "date-fns";
 
 // Define types needed internally
@@ -65,7 +65,7 @@ function checkMatch(dbNum: number, targetNums: number[]): { number: number, type
  * @param analysisSets The sets derived from the user's input numbers.
  * @param inputLabels The labels for the 6 input fields.
  * @param inputNumbers The original 6 input numbers as strings
- * @returns An array of raw result strings (e.g., "1er-AM: Week 3: 50|strict").
+ * @returns An object containing raw result strings (for summary) and detailed log.
  */
 export async function performDatabaseAnalysis(
   baseDate: Date,
@@ -73,9 +73,25 @@ export async function performDatabaseAnalysis(
   analysisSets: AnalysisSet[],
   inputLabels: string[],
   inputNumbers: string[] // The original 6 input numbers as strings
-): Promise<string[]> {
+): Promise<{ rawResults: string[], detailedLog: AnalysisLog }> {
   
   const rawFinalResults: string[] = [];
+  const detailedLogMap = new Map<number, AnalysisLogEntry>(); // Key: inputIndex
+
+  // 1. Initialize detailed log structure for all inputs that generated a set
+  analysisSets.forEach(currentSet => {
+    currentSet.inputIndices.forEach(inputIndex => {
+        const inputNum = parseInt(inputNumbers[inputIndex]);
+        if (!detailedLogMap.has(inputIndex)) {
+            detailedLogMap.set(inputIndex, {
+                inputLabel: inputLabels[inputIndex],
+                inputNumber: inputNum,
+                analysisSetId: currentSet.id,
+                historicalHits: [],
+            });
+        }
+    });
+  });
 
   for (const currentSet of analysisSets) {
     const { days } = currentSet.matchingResult;
@@ -140,8 +156,17 @@ export async function performDatabaseAnalysis(
               // A match was found! Record this hit for ALL original input numbers that generated this set.
               currentSet.inputIndices.forEach(inputIndex => {
                 const inputLabel = inputLabels[inputIndex];
-                // Format: "LABEL: Week X: NUMBER|TYPE"
+                
+                // 1. Add to raw results (for summary display)
                 rawFinalResults.push(`${inputLabel}: Week ${weeksBack}: ${matchResult.number}|${matchResult.type}`);
+                
+                // 2. Add to detailed log
+                detailedLogMap.get(inputIndex)?.historicalHits.push({
+                    week: weeksBack,
+                    date: recordDate,
+                    numberFound: matchResult.number,
+                    matchType: matchResult.type,
+                });
               });
             }
           }
@@ -150,7 +175,10 @@ export async function performDatabaseAnalysis(
     }
   }
 
-  return rawFinalResults;
+  return {
+    rawResults: rawFinalResults,
+    detailedLog: Array.from(detailedLogMap.values()),
+  };
 }
 
 
@@ -164,9 +192,25 @@ export async function performGeorgiaDatabaseAnalysis(
   analysisSets: AnalysisSet[],
   inputLabels: string[],
   inputNumbers: string[] // The original 9 input numbers as strings
-): Promise<string[]> {
+): Promise<{ rawResults: string[], detailedLog: AnalysisLog }> {
   
   const rawFinalResults: string[] = [];
+  const detailedLogMap = new Map<number, AnalysisLogEntry>(); // Key: inputIndex
+
+  // 1. Initialize detailed log structure for all inputs that generated a set
+  analysisSets.forEach(currentSet => {
+    currentSet.inputIndices.forEach(inputIndex => {
+        const inputNum = parseInt(inputNumbers[inputIndex]);
+        if (!detailedLogMap.has(inputIndex)) {
+            detailedLogMap.set(inputIndex, {
+                inputLabel: inputLabels[inputIndex],
+                inputNumber: inputNum,
+                analysisSetId: currentSet.id,
+                historicalHits: [],
+            });
+        }
+    });
+  });
 
   for (const currentSet of analysisSets) {
     const { days } = currentSet.matchingResult;
@@ -231,8 +275,17 @@ export async function performGeorgiaDatabaseAnalysis(
               // A match was found! Record this hit for ALL original input numbers that generated this set.
               currentSet.inputIndices.forEach(inputIndex => {
                 const inputLabel = inputLabels[inputIndex];
-                // Format: "LABEL: Week X: NUMBER|TYPE"
+                
+                // 1. Add to raw results (for summary display)
                 rawFinalResults.push(`${inputLabel}: Week ${weeksBack}: ${matchResult.number}|${matchResult.type}`);
+                
+                // 2. Add to detailed log
+                detailedLogMap.get(inputIndex)?.historicalHits.push({
+                    week: weeksBack,
+                    date: recordDate,
+                    numberFound: matchResult.number,
+                    matchType: matchResult.type,
+                });
               });
             }
           }
@@ -241,5 +294,8 @@ export async function performGeorgiaDatabaseAnalysis(
     }
   }
 
-  return rawFinalResults;
+  return {
+    rawResults: rawFinalResults,
+    detailedLog: Array.from(detailedLogMap.values()),
+  };
 }

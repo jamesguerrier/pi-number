@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getEnglishDayName } from "@/lib/data";
 import { FormattedResult, cn } from "@/lib/utils";
+import { AnalysisLog } from "@/lib/schemas";
+import { StepLogViewer } from "./step-log-viewer";
 
 // Define types needed internally for display
 interface MatchingResult {
@@ -17,14 +19,15 @@ interface AnalysisSet {
 }
 
 interface FinalResultsSectionProps {
-    formattedFinalResults: FormattedResult[]; // Corrected type from string[] to FormattedResult[]
+    formattedFinalResults: FormattedResult[];
     mariagePairs: string[];
     analysisSets: AnalysisSet[];
     inputLabels: string[];
+    detailedLog: AnalysisLog; // New prop
     resetAnalysis: () => void;
 }
 
-export function FinalResultsSection({ formattedFinalResults, mariagePairs, analysisSets, inputLabels, resetAnalysis }: FinalResultsSectionProps) {
+export function FinalResultsSection({ formattedFinalResults, mariagePairs, analysisSets, inputLabels, detailedLog, resetAnalysis }: FinalResultsSectionProps) {
     return (
         <div className="mt-8 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border space-y-6">
             <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Analysis Summary</h3>
@@ -99,13 +102,16 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
                 </div>
             )}
 
-            <Button 
-                onClick={resetAnalysis}
-                className="mt-4 w-full"
-                variant="default"
-            >
-                Start New Analysis
-            </Button>
+            <div className="flex flex-col md:flex-row gap-3 pt-4">
+                <Button 
+                    onClick={resetAnalysis}
+                    className="w-full md:w-1/2"
+                    variant="default"
+                >
+                    Start New Analysis
+                </Button>
+                <StepLogViewer detailedLog={detailedLog} />
+            </div>
         </div>
     );
 }

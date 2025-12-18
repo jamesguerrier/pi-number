@@ -9,6 +9,7 @@ import { FinalResultsSection } from "./final-results-section";
 import { performGeorgiaDatabaseAnalysis } from "@/lib/analysis";
 import { Loader2 } from "lucide-react";
 import { GeorgiaNumberInputSection } from "./georgia-number-input-section";
+import { AnalysisLog } from "@/lib/schemas"; // Import new type
 
 // Define types needed internally
 type MatchingResult = {
@@ -35,6 +36,7 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
   
   const [analysisSets, setAnalysisSets] = useState<AnalysisSet[]>([]);
   const [rawFinalResults, setRawFinalResults] = useState<string[]>([]);
+  const [detailedLog, setDetailedLog] = useState<AnalysisLog>([]); // New state for detailed log
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Define the labels for the 9 inputs
@@ -69,6 +71,7 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
 
     setIsAnalyzing(true);
     setRawFinalResults([]); // Clear previous results
+    setDetailedLog([]); // Clear previous log
     setAnalysisSets([]); // Clear previous sets
 
     // 1. Map input numbers to unique analysis sets
@@ -110,7 +113,7 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
     
     if (newAnalysisSets.length > 0) {
       // 2. Perform the full database analysis (5 weeks) using the Georgia-specific function
-      const results = await performGeorgiaDatabaseAnalysis(
+      const { rawResults, detailedLog } = await performGeorgiaDatabaseAnalysis( // Destructure new return object
         date,
         tableName,
         newAnalysisSets,
@@ -118,7 +121,8 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
         numbers
       );
       
-      setRawFinalResults(results);
+      setRawFinalResults(rawResults);
+      setDetailedLog(detailedLog); // Set detailed log
     } else {
       // If no sets were found, we still stop loading and show results (which will be empty)
       alert("No matching data found for entered numbers.");
@@ -132,6 +136,7 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
     setNumbers(Array(9).fill(""));
     setAnalysisSets([]);
     setRawFinalResults([]);
+    setDetailedLog([]); // Reset detailed log
     setIsAnalyzing(false);
   };
   
@@ -177,6 +182,7 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
               mariagePairs={mariagePairs}
               analysisSets={analysisSets}
               inputLabels={inputLabels}
+              detailedLog={detailedLog} // Pass detailed log
               resetAnalysis={resetAnalysis}
             />
           )}

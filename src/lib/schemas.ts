@@ -53,3 +53,22 @@ export const GeorgiaDatabaseRecordSchema = GeorgiaDataEntrySchema.extend({
 });
 
 export type GeorgiaDatabaseRecord = z.infer<typeof GeorgiaDatabaseRecordSchema>;
+
+
+// --- Analysis Log Types ---
+
+export type HistoricalHit = {
+  week: number;
+  date: string; // yyyy-MM-dd
+  numberFound: number;
+  matchType: 'strict';
+};
+
+export type AnalysisLogEntry = {
+  inputLabel: string; // e.g., "1er-AM"
+  inputNumber: number; // The number the user entered
+  analysisSetId: string; // e.g., "lunMar-firstLM"
+  historicalHits: HistoricalHit[];
+};
+
+export type AnalysisLog = AnalysisLogEntry[];

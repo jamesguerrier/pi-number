@@ -1,0 +1,111 @@
+"use client";
+
+import { AnalysisLog, AnalysisLogEntry, HistoricalHit } from "@/lib/schemas";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { format } from "date-fns";
+import { ListChecks } from "lucide-react";
+
+interface StepLogViewerProps {
+    detailedLog: AnalysisLog;
+}
+
+export function StepLogViewer({ detailedLog }: StepLogViewerProps) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="outline" className="w-full md:w-1/2 gap-2">
+                    <ListChecks className="h-4 w-4" />
+                    View Step Log
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Detailed Analysis Log (5 Weeks)</DialogTitle>
+                </DialogHeader>
+                
+                <ScrollArea className="flex-grow p-4 border rounded-lg bg-background">
+                    <div className="space-y-8">
+                        {detailedLog.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-10">No analysis sets were generated from your input numbers.</p>
+                        ) : (
+                            detailedLog.map((entry, index) => (
+                                <LogEntryTable key={index} entry={entry} />
+                            ))
+                        )}
+                    </div>
+                </ScrollArea>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+interface LogEntryTableProps {
+    entry: AnalysisLogEntry;
+}
+
+function LogEntryTable({ entry }: LogEntryTableProps) {
+    const { inputLabel, inputNumber, analysisSetId, historicalHits } = entry;
+    
+    // Group hits by week for easier display
+    const hitsByWeek: Record<number, HistoricalHit[]> = {};
+    for (let i = 1; i <= 5; i++) {
+        hitsByWeek[i] = [];
+    }
+    historicalHits.forEach(hit => {
+        hitsByWeek[hit.week]?.push(hit);
+    });
+
+    // Extract set info from ID (e.g., lunMar-firstLM)
+    const setInfo = analysisSetId.split('-');
+    const category = setInfo[0];
+    const subCategory = setInfo[1];
+
+    return (
+        <div className="border rounded-lg shadow-sm">
+            <div className="p-4 bg-gray-100 dark:bg-gray-800 border-b">
+                <h4 className="text-lg font-bold text-primary">
+                    Input: <span className="text-foreground">{inputLabel} ({String(inputNumber).padStart(2, '0')})</span>
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                    Found in Data Set: {category} - {subCategory}
+                </p>
+            </div>
+            
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="w-[80px]">Week</TableHead>
+                        <TableHead className="w-[150px]">Date Checked</TableHead>
+                        <TableHead>Hits Found</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {Object.entries(hitsByWeek).map(([week, hits]) => (
+                        <TableRow key={week}>
+                            <TableCell className="font-medium">Week {week}</TableCell>
+                            <TableCell>
+                                {hits.length > 0 ? format(new Date(hits[0].date), 'MMM dd, yyyy') : 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                                {hits.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {hits.map((hit, i) => (
+                                            <span key={i} className="px-2 py-0.5 text-xs font-mono bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded">
+                                                {String(hit.numberFound).padStart(2, '0')} ({hit.matchType})
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span className="text-muted-foreground italic text-sm">No match found this week.</span>
+                                )}
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </div>
+    );
+}
