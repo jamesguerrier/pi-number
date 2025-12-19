@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Zap, Calendar, ListChecks, Loader2 } from "lucide-react";
+import { Zap, History, GitCompare, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -37,7 +37,7 @@ export default function LandingPage() {
           </CardHeader>
           <CardContent className="space-y-6 text-center">
             <p className="text-lg text-muted-foreground">
-              This application helps you analyze specific number patterns across four preceding weeks based on a selected date and location.
+              This application helps you analyze specific number patterns across **five** preceding weeks based on a selected date and location (New York, Florida, or Georgia).
             </p>
             
             <Separator />
@@ -45,23 +45,23 @@ export default function LandingPage() {
             <div className="grid md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Zap className="h-8 w-8 text-blue-500 mx-auto" />
-                <h4 className="font-semibold">Enter Numbers</h4>
+                <h4 className="font-semibold">Input & Set Mapping</h4>
                 <p className="text-sm text-muted-foreground">
-                  Input six 2-digit numbers to find matching patterns in our dataset.
+                  Enter your 2-digit numbers to instantly map them to specific historical analysis sets (Day, Moon, or Night).
                 </p>
               </div>
               <div className="space-y-2">
-                <Calendar className="h-8 w-8 text-green-500 mx-auto" />
-                <h4 className="font-semibold">Analyze History</h4>
+                <History className="h-8 w-8 text-green-500 mx-auto" />
+                <h4 className="font-semibold">5-Week Historical Analysis</h4>
                 <p className="text-sm text-muted-foreground">
-                  Review patterns across the four weeks immediately preceding your selected date.
+                  We automatically check the last five weeks of historical data for matching numbers based on the mapped sets.
                 </p>
               </div>
               <div className="space-y-2">
-                <ListChecks className="h-8 w-8 text-purple-500 mx-auto" />
-                <h4 className="font-semibold">Track Results</h4>
+                <GitCompare className="h-8 w-8 text-purple-500 mx-auto" />
+                <h4 className="font-semibold">Verify & Summarize</h4>
                 <p className="text-sm text-muted-foreground">
-                  Record numbers you observe to generate a final, summarized list of recurring hits.
+                  View summarized results, identify Mariage pairs, and use the dedicated Verifier tool to cross-reference against known patterns.
                 </p>
               </div>
             </div>
