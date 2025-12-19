@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getPreviousWeekDates } from "./dateUtils";
 import { DatabaseRecord, GeorgiaDatabaseRecord, AnalysisLog, AnalysisLogEntry, HistoricalHit } from "./schemas";
 import { format } from "date-fns";
+import { reverseNumber } from "./utils"; // Import reverseNumber
 
 // Define types needed internally
 type MatchingResult = {
@@ -40,18 +41,6 @@ const GA_DB_NUMBER_FIELDS: (keyof Omit<GeorgiaDatabaseRecord, 'id' | 'created_at
   'second_night',
   'third_night',
 ];
-
-/**
- * Reverses a 2-digit number (0-99).
- * e.g., 43 -> 34, 5 -> 50, 50 -> 5, 0 -> 0
- */
-function reverseNumber(n: number): number {
-  if (n < 0 || n > 99) return n;
-
-  const s = String(n).padStart(2, '0');
-  const reversedString = s[1] + s[0];
-  return parseInt(reversedString);
-}
 
 /**
  * Checks if a database number (dbNum) matches any number in the target set (targetNums)

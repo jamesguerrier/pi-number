@@ -13,6 +13,18 @@ export type FormattedResult = {
 };
 
 /**
+ * Reverses a 2-digit number (0-99).
+ * e.g., 43 -> 34, 5 -> 50, 50 -> 5, 0 -> 0
+ */
+export function reverseNumber(n: number): number {
+  if (n < 0 || n > 99) return n;
+
+  const s = String(n).padStart(2, '0');
+  const reversedString = s[1] + s[0];
+  return parseInt(reversedString);
+}
+
+/**
  * Takes an array of result strings, extracts the numbers and types, counts their occurrences,
  * and returns a formatted array of objects for display.
  * The input strings are expected to be in the format: "LABEL: Week X: NUMBER|TYPE"
@@ -74,6 +86,40 @@ export function getUniqueNumbersFromRawResults(results: string[]): number[] {
   });
   return Array.from(uniqueNumbers).sort((a, b) => a - b);
 }
+
+/**
+ * Filters a list of unique numbers to ensure no number and its reverse are both present.
+ * If both N and reverse(N) are present, only the smaller number is kept.
+ * @param numbers Array of unique numbers (0-99).
+ * @returns Filtered array of numbers.
+ */
+export function getUniqueAndNonReversedNumbers(numbers: number[]): number[] {
+  const filteredSet = new Set<number>();
+  const seen = new Set<number>();
+
+  for (const num of numbers) {
+    if (seen.has(num)) {
+      continue;
+    }
+
+    const reversed = reverseNumber(num);
+
+    if (numbers.includes(reversed)) {
+      // If both N and reverse(N) exist, keep the smaller one.
+      const smaller = Math.min(num, reversed);
+      filteredSet.add(smaller);
+      seen.add(num);
+      seen.add(reversed);
+    } else {
+      // Only N exists, keep N.
+      filteredSet.add(num);
+      seen.add(num);
+    }
+  }
+
+  return Array.from(filteredSet).sort((a, b) => a - b);
+}
+
 
 /**
  * Helper function to get unique digits of a 2-digit number (0-99).

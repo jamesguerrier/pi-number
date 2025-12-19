@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getEnglishDayName } from "@/lib/data";
-import { FormattedResult, cn, getUniqueNumbersFromRawResults } from "@/lib/utils";
+import { FormattedResult, cn, getUniqueNumbersFromRawResults, getUniqueAndNonReversedNumbers } from "@/lib/utils";
 import { AnalysisLog } from "@/lib/schemas";
 import { StepLogViewer } from "./step-log-viewer";
 import { useRouter } from "next/navigation";
@@ -34,8 +34,11 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
 
     const handleGoToVerify = () => {
         const uniqueNumbers = getUniqueNumbersFromRawResults(rawFinalResults);
+        // Filter the list to remove duplicates and ensure no number and its reverse are both present
+        const filteredNumbers = getUniqueAndNonReversedNumbers(uniqueNumbers);
+        
         // Format numbers as a comma-separated string, ensuring 2 digits for consistency
-        const numberString = uniqueNumbers.map(n => String(n).padStart(2, '0')).join(',');
+        const numberString = filteredNumbers.map(n => String(n).padStart(2, '0')).join(',');
         
         if (numberString) {
             router.push(`/verifier?setA=${numberString}`);
