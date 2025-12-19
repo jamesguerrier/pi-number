@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 export type FormattedResult = {
   number: string; // The number string (e.g., '70')
   count: number;
-  type: 'strict'; // Match type
+  type: 'strict' | 'reverse'; // Match type
   display: string; // The final display string (e.g., '70 (2 times)')
 };
 
@@ -24,7 +24,7 @@ export function formatFinalResults(results: string[]): FormattedResult[] {
   // 1. Extract numbers, types, and count occurrences
   results.forEach(result => {
     // Regex to extract the number and type at the end of the string
-    const match = result.match(/:\s*(\d+)\|(\w+)$/);
+    const match = result.match(/:\s*(\d+)\|(strict|reverse)$/);
     if (match && match[1] && match[2]) {
       const number = match[1];
       const type = match[2];
@@ -44,7 +44,7 @@ export function formatFinalResults(results: string[]): FormattedResult[] {
     formattedResults.push({
       number,
       count,
-      type: type as 'strict', // Assuming 'strict' for now based on analysis.ts
+      type: type as 'strict' | 'reverse', // Cast to the union type
       display
     });
   }

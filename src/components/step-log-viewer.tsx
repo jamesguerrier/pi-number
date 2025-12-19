@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { ListChecks } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface StepLogViewerProps {
     detailedLog: AnalysisLog;
@@ -93,7 +94,15 @@ function LogEntryTable({ entry }: LogEntryTableProps) {
                                 {hits.length > 0 ? (
                                     <div className="flex flex-wrap gap-2">
                                         {hits.map((hit, i) => (
-                                            <span key={i} className="px-2 py-0.5 text-xs font-mono bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded">
+                                            <span 
+                                                key={i} 
+                                                className={cn(
+                                                    "px-2 py-0.5 text-xs font-mono rounded",
+                                                    hit.matchType === 'strict' 
+                                                        ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
+                                                        : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+                                                )}
+                                            >
                                                 {String(hit.numberFound).padStart(2, '0')} ({hit.matchType})
                                             </span>
                                         ))}

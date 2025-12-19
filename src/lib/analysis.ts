@@ -42,16 +42,35 @@ const GA_DB_NUMBER_FIELDS: (keyof Omit<GeorgiaDatabaseRecord, 'id' | 'created_at
 ];
 
 /**
+ * Reverses a 2-digit number (0-99).
+ * e.g., 43 -> 34, 5 -> 50, 50 -> 5, 0 -> 0
+ */
+function reverseNumber(n: number): number {
+  if (n < 0 || n > 99) return n;
+
+  const s = String(n).padStart(2, '0');
+  const reversedString = s[1] + s[0];
+  return parseInt(reversedString);
+}
+
+/**
  * Checks if a database number (dbNum) matches any number in the target set (targetNums)
- * based on the "strict" rule (direct match only).
+ * based on the "strict" rule (direct match) or "reverse" rule (mirror match).
  * @param dbNum The number retrieved from the database (0-99).
  * @param targetNums The array of numbers from the analysis set (0-99).
  * @returns An object containing the matched number and match type, or null.
  */
-function checkMatch(dbNum: number, targetNums: number[]): { number: number, type: 'strict' } | null {
-  // Strict Match: Only return a match if the database number is directly included in the target numbers.
+function checkMatch(dbNum: number, targetNums: number[]): { number: number, type: 'strict' | 'reverse' } | null {
+  // 1. Strict Match: Direct inclusion
   if (targetNums.includes(dbNum)) {
     return { number: dbNum, type: 'strict' };
+  }
+  
+  // 2. Reverse Match: Check if the reverse of the database number is in the target set
+  const reversedDbNum = reverseNumber(dbNum);
+  if (targetNums.includes(reversedDbNum)) {
+    // We return the database number (dbNum) that was found, but mark the match type as 'reverse'.
+    return { number: dbNum, type: 'reverse' };
   }
   
   return null;

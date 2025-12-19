@@ -89,8 +89,8 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
                                     "px-3 py-1 rounded-full font-mono text-lg",
                                     // Conditional styling based on match type
                                     result.type === 'strict' 
-                                        ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" // Highlight strict matches
-                                        : "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200" // Default/other matches
+                                        ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" // Strict matches (Red)
+                                        : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200" // Reverse matches (Blue)
                                 )}
                             >
                                 {result.display}

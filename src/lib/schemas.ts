@@ -61,7 +61,7 @@ export type HistoricalHit = {
   week: number;
   date: string; // yyyy-MM-dd
   numberFound: number;
-  matchType: 'strict';
+  matchType: 'strict' | 'reverse';
 };
 
 export type AnalysisLogEntry = {
