@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VERIFIER_DATA } from '@/lib/verifierData';
 import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
+import { CheckCircle } from 'lucide-react'; // Import CheckCircle
 
 interface MatchResult {
     matchA: number;
@@ -50,6 +51,7 @@ export function VerifierTool() {
 
       if (matchA !== undefined && matchB !== undefined) {
         // Check if this specific pair has already been found to avoid duplicates
+        // Note: The original logic checked for (A, B) and (B, A) duplicates, which is correct.
         const isDuplicate = foundMatches.some(
             m => (m.matchA === matchA && m.matchB === matchB) || (m.matchA === matchB && m.matchB === matchA)
         );
@@ -100,17 +102,21 @@ export function VerifierTool() {
           <h3 className="text-xl font-bold mb-3">Results:</h3>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {results.length > 0 ? (
-              results.map((match, index) => (
-                <div key={index} className="flex items-center space-x-2 p-2 rounded-md bg-gray-50 dark:bg-gray-800">
-                  <span className={cn("font-mono text-lg", "text-green-600 dark:text-green-400 font-bold")}>
-                    {String(match.matchA).padStart(2, '0')}
-                  </span>
-                  <span className="text-muted-foreground">–</span>
-                  <span className={cn("font-mono text-lg", "text-red-600 dark:text-red-400 font-bold")}>
-                    {String(match.matchB).padStart(2, '0')}
-                  </span>
-                </div>
-              ))
+              results.map((match, index) => {
+                const isDifferent = match.matchA !== match.matchB;
+                return (
+                  <div key={index} className="flex items-center space-x-2 p-2 rounded-md bg-gray-50 dark:bg-gray-800">
+                    {isDifferent && <CheckCircle className="h-5 w-5 text-green-500" />}
+                    <span className={cn("font-mono text-lg", "text-green-600 dark:text-green-400 font-bold")}>
+                      {String(match.matchA).padStart(2, '0')}
+                    </span>
+                    <span className="text-muted-foreground">–</span>
+                    <span className={cn("font-mono text-lg", "text-red-600 dark:text-red-400 font-bold")}>
+                      {String(match.matchB).padStart(2, '0')}
+                    </span>
+                  </div>
+                );
+              })
             ) : (
               <p className="text-muted-foreground italic">No matches found.</p>
             )}
