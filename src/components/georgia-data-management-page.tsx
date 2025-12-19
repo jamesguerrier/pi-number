@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Database } from "lucide-react";
+import { Loader2, Database, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { GeorgiaDatabaseRecord } from "@/lib/schemas";
@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { subDays, format } from "date-fns";
 import { GeorgiaDataTable } from "./georgia-data-table";
 import { GeorgiaDataEntryForm } from "./georgia-data-entry-form";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 interface GeorgiaDataManagementPageProps {
   location: string;
@@ -19,6 +21,7 @@ interface GeorgiaDataManagementPageProps {
 export function GeorgiaDataManagementPage({ location, tableName }: GeorgiaDataManagementPageProps) {
   const [data, setData] = useState<GeorgiaDatabaseRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -50,10 +53,22 @@ export function GeorgiaDataManagementPage({ location, tableName }: GeorgiaDataMa
     <div className="max-w-7xl mx-auto p-4 md:p-8">
       <Card className="w-full shadow-lg mb-6">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center justify-center gap-2">
-            <Database className="h-6 w-6" />
-            {location} Data Management
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => router.back()}
+              className="self-start"
+              title="Go Back"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <CardTitle className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center justify-center gap-2 flex-grow">
+              <Database className="h-6 w-6" />
+              {location} Data Management
+            </CardTitle>
+            <div className="w-10"></div> {/* Spacer for alignment */}
+          </div>
         </CardHeader>
         
         <CardContent className="space-y-8">
