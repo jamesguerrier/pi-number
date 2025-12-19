@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VERIFIER_DATA } from '@/lib/verifierData';
 import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle } from 'lucide-react'; // Import CheckCircle
+import { CheckCircle } from 'lucide-react';
 
 interface MatchResult {
     matchA: number;
@@ -42,23 +42,27 @@ export function VerifierTool() {
     const A = parseInput(inputA);
     const B = parseInput(inputB);
     const foundMatches: MatchResult[] = [];
+    // Use a Set to track unique pairs (matchA, matchB) to prevent duplicates across different rows
+    const uniquePairs = new Set<string>(); 
 
     VERIFIER_DATA.forEach(row => {
-      // Find the first number in the row that is also in list A
-      const matchA = row.find(n => A.includes(n));
-      // Find the first number in the row that is also in list B
-      const matchB = row.find(n => B.includes(n));
+      // Find all numbers in the row that are present in Set A
+      const matchesA = row.filter(n => A.includes(n));
+      // Find all numbers in the row that are present in Set B
+      const matchesB = row.filter(n => B.includes(n));
 
-      if (matchA !== undefined && matchB !== undefined) {
-        // Check if this specific pair has already been found to avoid duplicates
-        // Note: The original logic checked for (A, B) and (B, A) duplicates, which is correct.
-        const isDuplicate = foundMatches.some(
-            m => (m.matchA === matchA && m.matchB === matchB) || (m.matchA === matchB && m.matchB === matchA)
-        );
-        
-        if (!isDuplicate) {
-            foundMatches.push({ matchA, matchB });
-        }
+      if (matchesA.length > 0 && matchesB.length > 0) {
+        // Generate all unique combinations (Cartesian product)
+        matchesA.forEach(matchA => {
+          matchesB.forEach(matchB => {
+            const pairKey = `${matchA}-${matchB}`;
+            
+            if (!uniquePairs.has(pairKey)) {
+                uniquePairs.add(pairKey);
+                foundMatches.push({ matchA, matchB });
+            }
+          });
+        });
       }
     });
 
