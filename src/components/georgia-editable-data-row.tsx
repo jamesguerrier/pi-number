@@ -6,11 +6,22 @@ import { GeorgiaDatabaseRecord, GeorgiaDataEntrySchema, GeorgiaDataEntryFormValu
 import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, Edit, X, Loader2 } from "lucide-react";
+import { Check, Edit, X, Loader2, Trash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface GeorgiaEditableDataRowProps {
   record: GeorgiaDatabaseRecord;
@@ -88,6 +99,22 @@ export function GeorgiaEditableDataRow({ record, tableName, onUpdate }: GeorgiaE
     }
     setIsSubmitting(false);
   };
+  
+  const handleDelete = async () => {
+    setIsSubmitting(true);
+    const { error } = await supabase
+      .from(tableName)
+      .delete()
+      .eq('id', record.id);
+
+    if (error) {
+      toast.error(`Deletion failed: ${error.message}`);
+    } else {
+      toast.success("Record deleted successfully.");
+      onUpdate(); // Trigger parent component to re-fetch data
+    }
+    setIsSubmitting(false);
+  };
 
   const renderCell = (field: keyof GeorgiaDataEntryFormValues) => {
     const value = form.watch(field);
@@ -150,9 +177,33 @@ export function GeorgiaEditableDataRow({ record, tableName, onUpdate }: GeorgiaE
             </Button>
           </div>
         ) : (
-          <Button size="icon" variant="ghost" onClick={handleEdit} className="h-8 w-8">
-            <Edit className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-1 justify-end">
+            <Button size="icon" variant="ghost" onClick={handleEdit} className="h-8 w-8">
+              <Edit className="h-4 w-4" />
+            </Button>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="icon" variant="ghost" className="h-8 w-8">
+                  <Trash className="h-4 w-4 text-destructive" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the record for {format(parseISO(record.complete_date), 'MMM dd, yyyy')}.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Delete'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )}
       </TableCell>
     </TableRow>
