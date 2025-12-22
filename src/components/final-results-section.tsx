@@ -81,28 +81,41 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
             )}
 
             {/* Individual Hits Section */}
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-                <h4 className="font-semibold text-lg mb-2 border-b pb-1 text-green-600 dark:text-green-400">Historical Hits (Last 5 Weeks)</h4>
-                {formattedFinalResults.length > 0 ? (
-                    <div className="flex flex-wrap gap-3">
-                        {formattedFinalResults.map((result, index) => (
-                            <span 
-                                key={index} 
-                                className={cn(
-                                    "px-3 py-1 rounded-full font-mono text-lg",
-                                    // Conditional styling based on match type
-                                    result.type === 'strict' 
-                                        ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" // Strict matches (Red)
-                                        : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200" // Reverse matches (Blue)
-                                )}
-                            >
-                                {result.display}
-                            </span>
-                        ))}
+            <div className="space-y-2">
+                <div className="flex justify-between items-center border-b pb-1 mb-2">
+                    <h4 className="font-semibold text-lg text-green-600 dark:text-green-400">Historical Hits (Last 5 Weeks)</h4>
+                    <div className="flex gap-3 text-xs font-medium">
+                        <span className="flex items-center gap-1">
+                            <span className="h-3 w-3 rounded-full bg-red-500"></span> Strict Match
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <span className="h-3 w-3 rounded-full bg-blue-500"></span> Reverse Match
+                        </span>
                     </div>
-                ) : (
-                    <p className="text-gray-500 italic">No historical matches found across the last 5 weeks.</p>
-                )}
+                </div>
+                
+                <div className="max-h-60 overflow-y-auto">
+                    {formattedFinalResults.length > 0 ? (
+                        <div className="flex flex-wrap gap-3">
+                            {formattedFinalResults.map((result, index) => (
+                                <span 
+                                    key={index} 
+                                    className={cn(
+                                        "px-3 py-1 rounded-full font-mono text-lg",
+                                        // Conditional styling based on match type
+                                        result.type === 'strict' 
+                                            ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" // Strict matches (Red)
+                                            : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200" // Reverse matches (Blue)
+                                    )}
+                                >
+                                    {result.display}
+                                </span>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-gray-500 italic">No historical matches found across the last 5 weeks.</p>
+                    )}
+                </div>
             </div>
 
             {/* Mariage Section */}
