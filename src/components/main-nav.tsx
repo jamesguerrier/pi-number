@@ -15,8 +15,9 @@ export function MainNav() {
   const navItems = [
     { href: "/new-york", label: "New York" },
     { href: "/florida", label: "Florida" },
+    { href: "/new-jersey", label: "New Jersey" }, // Added New Jersey
     { href: "/georgia", label: "Georgia" },
-    { href: "/verifier", label: "Verifier" }, // Added Verifier
+    { href: "/verifier", label: "Verifier" },
   ]
 
   const handleSignOut = async () => {
