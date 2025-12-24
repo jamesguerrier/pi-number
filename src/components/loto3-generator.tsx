@@ -34,6 +34,17 @@ function buildRange(digit: number): number[] {
     ];
 }
 
+/**
+ * Generates the 6/9 complement of a 2-digit number by swapping all 6s and 9s.
+ */
+function swapSixNine(n: number): number {
+    if (n < 0 || n > 99) return n;
+    let s = String(n).padStart(2, '0');
+    // Use a temporary character 'X' to handle simultaneous replacement
+    s = s.replace(/6/g, 'X').replace(/9/g, '6').replace(/X/g, '9');
+    return parseInt(s);
+}
+
 function parseInput(value: string): string[] {
     return value
         .split(",")
@@ -135,6 +146,14 @@ export function Loto3Generator({ inputOverride }: Loto3GeneratorProps) {
                 row.forEach(num => collectedNumbers.add(num));
             }
         });
+        
+        // --- NEW LOGIC: Apply 6/9 swap rule ---
+        const numbersToSwap = Array.from(collectedNumbers);
+        numbersToSwap.forEach(num => {
+            const swappedNum = swapSixNine(num);
+            collectedNumbers.add(swappedNum);
+        });
+        // ---------------------------------------
 
         // Format the unique collected numbers
         const resultString = Array.from(collectedNumbers)
