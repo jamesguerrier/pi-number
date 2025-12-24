@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VERIFIER_DATA } from '@/lib/verifierData';
 import { reverseNumber } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface GeneratedNumber {
@@ -56,7 +55,7 @@ function parseInput(value: string): string[] {
 
 interface Loto3GeneratorProps {
     inputOverride: string;
-    onTransferToVerifier: (numbers: string) => void; // New prop
+    onTransferToVerifier: (numbers: string) => void;
 }
 
 export function Loto3Generator({ inputOverride, onTransferToVerifier }: Loto3GeneratorProps) {
@@ -99,13 +98,13 @@ export function Loto3Generator({ inputOverride, onTransferToVerifier }: Loto3Gen
             generatedResults.push({
                 original: num,
                 type: 'ABC',
-                numbers: abcNumbers,
+                numbers: acbNumbers,
             });
 
             generatedResults.push({
                 original: num,
                 type: 'ACB',
-                numbers: acbNumbers,
+                numbers: abcNumbers,
             });
         });
 
@@ -119,6 +118,7 @@ export function Loto3Generator({ inputOverride, onTransferToVerifier }: Loto3Gen
         
         if (rawInput.length === 0 || isNaN(inputNum) || inputNum < 0 || inputNum > 99) {
             setPairedResults('Please enter a valid 2-digit number (0-99).');
+            onTransferToVerifier(''); // Clear verifier input if invalid
             return;
         }
 
@@ -164,17 +164,17 @@ export function Loto3Generator({ inputOverride, onTransferToVerifier }: Loto3Gen
             .join(', ');
         
         setPairedResults(resultString || 'No paired numbers found in VERIFIER_DATA.');
-    };
-    
-    const handleTransfer = () => {
-        if (pairedResults && !pairedResults.startsWith('Please enter')) {
-            onTransferToVerifier(pairedResults);
-            toast.success("Paired numbers transferred to Verifier Input Set A (Green).");
+        
+        // AUTOMATIC TRANSFER: If results are valid, transfer them to the Verifier input
+        if (resultString) {
+            onTransferToVerifier(resultString);
+            toast.success("Paired numbers generated and automatically transferred to Verifier Set A (Green).");
         } else {
-            toast.error("Please generate valid paired numbers first.");
+            onTransferToVerifier('');
         }
     };
-
+    
+    // Removed handleTransfer function and the transfer button
 
     return (
         <Card className="w-full shadow-lg">
@@ -243,15 +243,6 @@ export function Loto3Generator({ inputOverride, onTransferToVerifier }: Loto3Gen
                         <div className="p-3 bg-muted/50 rounded-md break-all font-mono text-sm text-foreground">
                             {pairedResults || 'Awaiting input...'}
                         </div>
-                        <Button 
-                            onClick={handleTransfer} 
-                            className="w-full gap-2"
-                            variant="secondary"
-                            disabled={!pairedResults || pairedResults.startsWith('Please enter')}
-                        >
-                            Transfer to Verifier Set A (Green)
-                            <ArrowRight className="h-4 w-4" />
-                        </Button>
                     </div>
                 </div>
             </CardContent>

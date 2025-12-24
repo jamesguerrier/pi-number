@@ -5,7 +5,7 @@ import Link, { LinkProps } from "next/link"
 import { useRouter } from "next/navigation"
 import { Menu } from "lucide-react"
 
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/auth-context"
@@ -66,6 +66,8 @@ export function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="pr-0">
+        {/* Added SheetTitle to resolve accessibility warning */}
+        <SheetTitle className="sr-only">Main Navigation Menu</SheetTitle>
         <MobileLink
           href="/"
           className="flex items-center space-x-2 pt-4 pb-6 px-6"
