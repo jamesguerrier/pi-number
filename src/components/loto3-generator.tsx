@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VERIFIER_DATA } from '@/lib/verifierData';
 import { reverseNumber } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface GeneratedNumber {
     original: string;
@@ -54,9 +56,10 @@ function parseInput(value: string): string[] {
 
 interface Loto3GeneratorProps {
     inputOverride: string;
+    onTransferToVerifier: (numbers: string) => void; // New prop
 }
 
-export function Loto3Generator({ inputOverride }: Loto3GeneratorProps) {
+export function Loto3Generator({ inputOverride, onTransferToVerifier }: Loto3GeneratorProps) {
     const [input, setInput] = useState(inputOverride);
     const [results, setResults] = useState<GeneratedNumber[]>([]);
     
@@ -147,13 +150,12 @@ export function Loto3Generator({ inputOverride }: Loto3GeneratorProps) {
             }
         });
         
-        // --- NEW LOGIC: Apply 6/9 swap rule ---
+        // Apply 6/9 swap rule
         const numbersToSwap = Array.from(collectedNumbers);
         numbersToSwap.forEach(num => {
             const swappedNum = swapSixNine(num);
             collectedNumbers.add(swappedNum);
         });
-        // ---------------------------------------
 
         // Format the unique collected numbers
         const resultString = Array.from(collectedNumbers)
@@ -162,6 +164,15 @@ export function Loto3Generator({ inputOverride }: Loto3GeneratorProps) {
             .join(', ');
         
         setPairedResults(resultString || 'No paired numbers found in VERIFIER_DATA.');
+    };
+    
+    const handleTransfer = () => {
+        if (pairedResults && !pairedResults.startsWith('Please enter')) {
+            onTransferToVerifier(pairedResults);
+            toast.success("Paired numbers transferred to Verifier Input Set A (Green).");
+        } else {
+            toast.error("Please generate valid paired numbers first.");
+        }
     };
 
 
@@ -210,7 +221,7 @@ export function Loto3Generator({ inputOverride }: Loto3GeneratorProps) {
                     </div>
                 </div>
                 
-                {/* NEW: Paired Numbers Section */}
+                {/* Paired Numbers Section */}
                 <div className="pt-6 border-t space-y-4">
                     <h3 className="text-lg font-semibold">Paired Numbers</h3>
                     <div className="flex gap-2">
@@ -227,11 +238,20 @@ export function Loto3Generator({ inputOverride }: Loto3GeneratorProps) {
                         </Button>
                     </div>
                     
-                    <div className="result pt-2">
+                    <div className="result pt-2 space-y-2">
                         <h4 className="font-semibold mb-1">Paired Results:</h4>
                         <div className="p-3 bg-muted/50 rounded-md break-all font-mono text-sm text-foreground">
                             {pairedResults || 'Awaiting input...'}
                         </div>
+                        <Button 
+                            onClick={handleTransfer} 
+                            className="w-full gap-2"
+                            variant="secondary"
+                            disabled={!pairedResults || pairedResults.startsWith('Please enter')}
+                        >
+                            Transfer to Verifier Set A (Green)
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
                     </div>
                 </div>
             </CardContent>

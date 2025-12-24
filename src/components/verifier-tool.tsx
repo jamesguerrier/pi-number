@@ -26,11 +26,13 @@ function parseInput(value: string): number[] {
 
 interface VerifierToolProps {
     onMatchFound: (numbers: string) => void;
+    inputA: string; // Controlled state for Input A
+    setInputA: (value: string) => void; // Setter for Input A
 }
 
-export function VerifierTool({ onMatchFound }: VerifierToolProps) {
+export function VerifierTool({ onMatchFound, inputA, setInputA }: VerifierToolProps) {
   const searchParams = useSearchParams();
-  const [inputA, setInputA] = useState('');
+  // inputB remains local state
   const [inputB, setInputB] = useState('');
   const [results, setResults] = useState<MatchResult[]>([]);
 
@@ -40,7 +42,7 @@ export function VerifierTool({ onMatchFound }: VerifierToolProps) {
       // Pre-populate inputA with the numbers passed from the analysis page
       setInputA(setAFromUrl);
     }
-  }, [searchParams]);
+  }, [searchParams, setInputA]);
 
   const matchNumbers = () => {
     const A = parseInput(inputA);
