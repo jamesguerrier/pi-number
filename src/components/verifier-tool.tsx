@@ -24,7 +24,11 @@ function parseInput(value: string): number[] {
     .filter(v => !isNaN(v) && v >= 0 && v <= 99); // Filter for valid 2-digit numbers
 }
 
-export function VerifierTool() {
+interface VerifierToolProps {
+    onMatchFound: (numbers: string) => void;
+}
+
+export function VerifierTool({ onMatchFound }: VerifierToolProps) {
   const searchParams = useSearchParams();
   const [inputA, setInputA] = useState('');
   const [inputB, setInputB] = useState('');
@@ -44,6 +48,7 @@ export function VerifierTool() {
     const foundMatches: MatchResult[] = [];
     // Use a Set to track unique pairs (matchA, matchB) to prevent duplicates across different rows
     const uniquePairs = new Set<string>(); 
+    const uniqueMatchA = new Set<number>(); // Track unique matchA numbers
 
     VERIFIER_DATA.forEach(row => {
       // Find all numbers in the row that are present in Set A
@@ -60,6 +65,7 @@ export function VerifierTool() {
             if (!uniquePairs.has(pairKey)) {
                 uniquePairs.add(pairKey);
                 foundMatches.push({ matchA, matchB });
+                uniqueMatchA.add(matchA); // Collect unique matchA numbers
             }
           });
         });
@@ -67,6 +73,14 @@ export function VerifierTool() {
     });
 
     setResults(foundMatches);
+    
+    // Automatically transfer unique MatchA numbers (green) to Loto-3 input
+    const sortedUniqueMatchA = Array.from(uniqueMatchA).sort((a, b) => a - b);
+    const numberString = sortedUniqueMatchA.map(n => String(n).padStart(2, '0')).join(',');
+    
+    if (numberString) {
+        onMatchFound(numberString);
+    }
   };
 
   return (

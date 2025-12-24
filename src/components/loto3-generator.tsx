@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,9 +38,20 @@ function parseInput(value: string): string[] {
         .filter(n => /^\d{2}$/.test(n)); // Filter for exactly 2 digits
 }
 
-export function Loto3Generator() {
-    const [input, setInput] = useState('');
+interface Loto3GeneratorProps {
+    inputOverride: string;
+}
+
+export function Loto3Generator({ inputOverride }: Loto3GeneratorProps) {
+    const [input, setInput] = useState(inputOverride);
     const [results, setResults] = useState<GeneratedNumber[]>([]);
+
+    // Sync internal state with external override
+    useEffect(() => {
+        if (inputOverride !== input) {
+            setInput(inputOverride);
+        }
+    }, [inputOverride]);
 
     const generateLoto3 = () => {
         const numbers = parseInput(input);
