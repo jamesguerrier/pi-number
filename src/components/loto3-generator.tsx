@@ -12,17 +12,22 @@ interface GeneratedNumber {
 }
 
 // Helper functions for custom Loto-3 logic
+
+/**
+ * Ensures result is between 0 and 9, handling wrap-around (e.g., -1 -> 9, 10 -> 0).
+ */
 function wrap(n: number): number {
-    // Ensures result is between 0 and 9
     return (n % 10 + 10) % 10;
 }
 
+/**
+ * Builds the range of leading digits: [d-1, d, d+1] using wrap-around.
+ */
 function buildRange(digit: number): number[] {
     return [
         wrap(digit - 1),
         wrap(digit),
-        wrap(digit + 1),
-        wrap(digit + 2)
+        wrap(digit + 1)
     ];
 }
 
@@ -45,23 +50,17 @@ export function Loto3Generator() {
             const a = Number(num[0]);
             const b = Number(num[1]);
 
+            // 1. Get the ranges for A and B
             const rangeA = buildRange(a);
             const rangeB = buildRange(b);
 
-            const forbidden = wrap(a + 2);
-
-            // Combine ranges, get unique digits, filter out forbidden digit
-            let leadingDigits = [...new Set([...rangeA, ...rangeB])]
-                .filter(n => n !== forbidden);
-            
-            // Filter: allow 0 only if A = 0 (as per original JS logic)
-            if (a !== 0) {
-                leadingDigits = leadingDigits.filter(n => n !== 0);
-            }
+            // 2. Combine ranges and get unique digits
+            let leadingDigits = [...new Set([...rangeA, ...rangeB])];
             
             // Sort for consistent output
             leadingDigits.sort((x, y) => x - y);
 
+            // 3. Generate ABC (XAB) and ACB (XBA) combinations
             const abcNumbers = leadingDigits.map(x => `${x}${a}${b}`);
             const acbNumbers = leadingDigits.map(x => `${x}${b}${a}`);
 
