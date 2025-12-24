@@ -48,17 +48,8 @@ interface LogEntryTableProps {
 }
 
 function LogEntryTable({ entry }: LogEntryTableProps) {
-    const { inputLabel, inputNumber, analysisSetId, historicalHits } = entry;
+    const { inputLabel, inputNumber, analysisSetId, weekChecks } = entry;
     
-    // Group hits by week for easier display
-    const hitsByWeek: Record<number, HistoricalHit[]> = {};
-    for (let i = 1; i <= 5; i++) {
-        hitsByWeek[i] = [];
-    }
-    historicalHits.forEach(hit => {
-        hitsByWeek[hit.week]?.push(hit);
-    });
-
     // Extract set info from ID (e.g., lunMar-firstLM)
     const setInfo = analysisSetId.split('-');
     const category = setInfo[0];
@@ -79,21 +70,21 @@ function LogEntryTable({ entry }: LogEntryTableProps) {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[80px]">Week</TableHead>
-                        <TableHead className="w-[150px]">Date Checked</TableHead>
+                        <TableHead className="w-[250px]">Dates Checked</TableHead>
                         <TableHead>Hits Found</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {Object.entries(hitsByWeek).map(([week, hits]) => (
-                        <TableRow key={week}>
-                            <TableCell className="font-medium">Week {week}</TableCell>
-                            <TableCell>
-                                {hits.length > 0 ? format(new Date(hits[0].date), 'MMM dd, yyyy') : 'N/A'}
+                    {weekChecks.map((check) => (
+                        <TableRow key={check.week}>
+                            <TableCell className="font-medium">Week {check.week}</TableCell>
+                            <TableCell className="text-xs">
+                                {format(new Date(check.date1), 'MMM dd, yyyy')} & {format(new Date(check.date2), 'MMM dd, yyyy')}
                             </TableCell>
                             <TableCell>
-                                {hits.length > 0 ? (
+                                {check.historicalHits.length > 0 ? (
                                     <div className="flex flex-wrap gap-2">
-                                        {hits.map((hit, i) => (
+                                        {check.historicalHits.map((hit, i) => (
                                             <span 
                                                 key={i} 
                                                 className={cn(

@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getPreviousWeekDates } from "./dateUtils";
-import { DatabaseRecord, GeorgiaDatabaseRecord, AnalysisLog, AnalysisLogEntry, HistoricalHit } from "./schemas";
+import { DatabaseRecord, GeorgiaDatabaseRecord, AnalysisLog, AnalysisLogEntry, HistoricalHit, WeekCheck } from "./schemas";
 import { format } from "date-fns";
 import { reverseNumber } from "./utils"; // Import reverseNumber
 
@@ -84,7 +84,11 @@ export async function performDatabaseAnalysis(
 ): Promise<{ rawResults: string[], detailedLog: AnalysisLog }> {
   
   const rawFinalResults: string[] = [];
-  const detailedLogMap = new Map<number, AnalysisLogEntry>(); // Key: inputIndex
+  // Map to store the full log structure for each input index
+  const detailedLogMap = new Map<number, AnalysisLogEntry>(); 
+  
+  // Map to store the calculated WeekChecks for each unique analysis set ID
+  const setWeekChecksMap = new Map<string, WeekCheck[]>();
 
   // 1. Initialize detailed log structure for all inputs that generated a set
   analysisSets.forEach(currentSet => {
@@ -95,7 +99,7 @@ export async function performDatabaseAnalysis(
                 inputLabel: inputLabels[inputIndex],
                 inputNumber: inputNum,
                 analysisSetId: currentSet.id,
-                historicalHits: [],
+                weekChecks: [], // Initialize empty
             });
         }
     });
@@ -110,6 +114,8 @@ export async function performDatabaseAnalysis(
     const frenchDay1 = dayKeys[0];
     const frenchDay2 = dayKeys[1];
     
+    const weekChecks: WeekCheck[] = [];
+
     // Iterate through 5 weeks back (weeksBack = 1 to 5)
     for (let weeksBack = 1; weeksBack <= 5; weeksBack++) {
       const weekDates = getPreviousWeekDates(baseDate, frenchDay1, frenchDay2, weeksBack);
@@ -119,6 +125,8 @@ export async function performDatabaseAnalysis(
       
       const date1String = format(date1, 'yyyy-MM-dd');
       const date2String = format(date2, 'yyyy-MM-dd');
+      
+      const historicalHits: HistoricalHit[] = [];
 
       // 1. Fetch records for both dates in this week
       const { data: records, error } = await supabase
@@ -128,60 +136,83 @@ export async function performDatabaseAnalysis(
 
       if (error) {
         console.error(`Error fetching data for ${locationTableName} week ${weeksBack}:`, error);
+        // Still record the week check even if fetch failed
+        weekChecks.push({
+            week: weeksBack,
+            date1: date1String,
+            date2: date2String,
+            historicalHits: [],
+        });
         continue;
       }
       
-      if (!records || records.length === 0) {
-        continue;
-      }
-
-      // 2. Process fetched records
-      for (const record of records as DatabaseRecord[]) {
-        const recordDate = record.complete_date;
-        
-        // Determine which day of the set this record corresponds to (needed for logging)
-        const isDay1 = recordDate === date1String;
-        const isDay2 = recordDate === date2String;
-        
-        if (!isDay1 && !isDay2) continue;
-
-        // Determine the specific target numbers for this record's day (STRICT MATCHING)
-        let targetNumbersForRecord: number[] = [];
-        if (isDay1) {
-            targetNumbersForRecord = days[frenchDay1];
-        } else if (isDay2) {
-            targetNumbersForRecord = days[frenchDay2];
-        }
-
-        // 3. Compare all database number fields against the day-specific target numbers
-        for (const field of NY_FL_DB_NUMBER_FIELDS) {
-          const dbNum = record[field];
+      if (records && records.length > 0) {
+        // 2. Process fetched records
+        for (const record of records as DatabaseRecord[]) {
+          const recordDate = record.complete_date;
           
-          if (dbNum !== null && dbNum !== undefined && targetNumbersForRecord.length > 0) {
-            const matchResult = checkMatch(dbNum, targetNumbersForRecord);
+          // Determine which day of the set this record corresponds to (needed for logging)
+          const isDay1 = recordDate === date1String;
+          const isDay2 = recordDate === date2String;
+          
+          if (!isDay1 && !isDay2) continue;
+
+          // Determine the specific target numbers for this record's day (STRICT MATCHING)
+          let targetNumbersForRecord: number[] = [];
+          if (isDay1) {
+              targetNumbersForRecord = days[frenchDay1];
+          } else if (isDay2) {
+              targetNumbersForRecord = days[frenchDay2];
+          }
+
+          // 3. Compare all database number fields against the day-specific target numbers
+          for (const field of NY_FL_DB_NUMBER_FIELDS) {
+            const dbNum = record[field];
             
-            if (matchResult !== null) {
-              // A match was found! Record this hit for ALL original input numbers that generated this set.
-              currentSet.inputIndices.forEach(inputIndex => {
-                const inputLabel = inputLabels[inputIndex];
-                
-                // 1. Add to raw results (for summary display)
-                rawFinalResults.push(`${inputLabel}: Week ${weeksBack}: ${matchResult.number}|${matchResult.type}`);
-                
-                // 2. Add to detailed log
-                detailedLogMap.get(inputIndex)?.historicalHits.push({
+            if (dbNum !== null && dbNum !== undefined && targetNumbersForRecord.length > 0) {
+              const matchResult = checkMatch(dbNum, targetNumbersForRecord);
+              
+              if (matchResult !== null) {
+                // A match was found! Record this hit.
+                const hit: HistoricalHit = {
                     week: weeksBack,
                     date: recordDate,
                     numberFound: matchResult.number,
                     matchType: matchResult.type,
+                };
+                historicalHits.push(hit);
+                
+                // Add to raw results (for summary display) for ALL associated input indices
+                currentSet.inputIndices.forEach(inputIndex => {
+                    const inputLabel = inputLabels[inputIndex];
+                    rawFinalResults.push(`${inputLabel}: Week ${weeksBack}: ${matchResult.number}|${matchResult.type}`);
                 });
-              });
+              }
             }
           }
         }
       }
+      
+      // Record the week check with all hits found (or none)
+      weekChecks.push({
+          week: weeksBack,
+          date1: date1String,
+          date2: date2String,
+          historicalHits: historicalHits,
+      });
     }
+    
+    // Store the calculated week checks for this set
+    setWeekChecksMap.set(currentSet.id, weekChecks);
   }
+  
+  // 3. Finalize detailed log by mapping WeekChecks back to input indices
+  detailedLogMap.forEach((entry, inputIndex) => {
+      const setWeekChecks = setWeekChecksMap.get(entry.analysisSetId);
+      if (setWeekChecks) {
+          entry.weekChecks = setWeekChecks;
+      }
+  });
 
   return {
     rawResults: rawFinalResults,
@@ -203,7 +234,8 @@ export async function performGeorgiaDatabaseAnalysis(
 ): Promise<{ rawResults: string[], detailedLog: AnalysisLog }> {
   
   const rawFinalResults: string[] = [];
-  const detailedLogMap = new Map<number, AnalysisLogEntry>(); // Key: inputIndex
+  const detailedLogMap = new Map<number, AnalysisLogEntry>(); 
+  const setWeekChecksMap = new Map<string, WeekCheck[]>();
 
   // 1. Initialize detailed log structure for all inputs that generated a set
   analysisSets.forEach(currentSet => {
@@ -214,7 +246,7 @@ export async function performGeorgiaDatabaseAnalysis(
                 inputLabel: inputLabels[inputIndex],
                 inputNumber: inputNum,
                 analysisSetId: currentSet.id,
-                historicalHits: [],
+                weekChecks: [],
             });
         }
     });
@@ -229,6 +261,8 @@ export async function performGeorgiaDatabaseAnalysis(
     const frenchDay1 = dayKeys[0];
     const frenchDay2 = dayKeys[1];
     
+    const weekChecks: WeekCheck[] = [];
+
     // Iterate through 5 weeks back (weeksBack = 1 to 5)
     for (let weeksBack = 1; weeksBack <= 5; weeksBack++) {
       const weekDates = getPreviousWeekDates(baseDate, frenchDay1, frenchDay2, weeksBack);
@@ -238,6 +272,8 @@ export async function performGeorgiaDatabaseAnalysis(
       
       const date1String = format(date1, 'yyyy-MM-dd');
       const date2String = format(date2, 'yyyy-MM-dd');
+      
+      const historicalHits: HistoricalHit[] = [];
 
       // 1. Fetch records for both dates in this week
       const { data: records, error } = await supabase
@@ -247,60 +283,82 @@ export async function performGeorgiaDatabaseAnalysis(
 
       if (error) {
         console.error(`Error fetching data for ${locationTableName} week ${weeksBack}:`, error);
+        weekChecks.push({
+            week: weeksBack,
+            date1: date1String,
+            date2: date2String,
+            historicalHits: [],
+        });
         continue;
       }
       
-      if (!records || records.length === 0) {
-        continue;
-      }
-
-      // 2. Process fetched records
-      for (const record of records as GeorgiaDatabaseRecord[]) {
-        const recordDate = record.complete_date;
-        
-        // Determine which day of the set this record corresponds to (needed for logging)
-        const isDay1 = recordDate === date1String;
-        const isDay2 = recordDate === date2String;
-        
-        if (!isDay1 && !isDay2) continue;
-
-        // Determine the specific target numbers for this record's day (STRICT MATCHING)
-        let targetNumbersForRecord: number[] = [];
-        if (isDay1) {
-            targetNumbersForRecord = days[frenchDay1];
-        } else if (isDay2) {
-            targetNumbersForRecord = days[frenchDay2];
-        }
-
-        // 3. Compare all database number fields against the day-specific target numbers
-        for (const field of GA_DB_NUMBER_FIELDS) {
-          const dbNum = record[field];
+      if (records && records.length > 0) {
+        // 2. Process fetched records
+        for (const record of records as GeorgiaDatabaseRecord[]) {
+          const recordDate = record.complete_date;
           
-          if (dbNum !== null && dbNum !== undefined && targetNumbersForRecord.length > 0) {
-            const matchResult = checkMatch(dbNum, targetNumbersForRecord);
+          // Determine which day of the set this record corresponds to (needed for logging)
+          const isDay1 = recordDate === date1String;
+          const isDay2 = recordDate === date2String;
+          
+          if (!isDay1 && !isDay2) continue;
+
+          // Determine the specific target numbers for this record's day (STRICT MATCHING)
+          let targetNumbersForRecord: number[] = [];
+          if (isDay1) {
+              targetNumbersForRecord = days[frenchDay1];
+          } else if (isDay2) {
+              targetNumbersForRecord = days[frenchDay2];
+          }
+
+          // 3. Compare all database number fields against the day-specific target numbers
+          for (const field of GA_DB_NUMBER_FIELDS) {
+            const dbNum = record[field];
             
-            if (matchResult !== null) {
-              // A match was found! Record this hit for ALL original input numbers that generated this set.
-              currentSet.inputIndices.forEach(inputIndex => {
-                const inputLabel = inputLabels[inputIndex];
-                
-                // 1. Add to raw results (for summary display)
-                rawFinalResults.push(`${inputLabel}: Week ${weeksBack}: ${matchResult.number}|${matchResult.type}`);
-                
-                // 2. Add to detailed log
-                detailedLogMap.get(inputIndex)?.historicalHits.push({
+            if (dbNum !== null && dbNum !== undefined && targetNumbersForRecord.length > 0) {
+              const matchResult = checkMatch(dbNum, targetNumbersForRecord);
+              
+              if (matchResult !== null) {
+                // A match was found! Record this hit.
+                const hit: HistoricalHit = {
                     week: weeksBack,
                     date: recordDate,
                     numberFound: matchResult.number,
                     matchType: matchResult.type,
+                };
+                historicalHits.push(hit);
+                
+                // Add to raw results (for summary display) for ALL associated input indices
+                currentSet.inputIndices.forEach(inputIndex => {
+                    const inputLabel = inputLabels[inputIndex];
+                    rawFinalResults.push(`${inputLabel}: Week ${weeksBack}: ${matchResult.number}|${matchResult.type}`);
                 });
-              });
+              }
             }
           }
         }
       }
+      
+      // Record the week check with all hits found (or none)
+      weekChecks.push({
+          week: weeksBack,
+          date1: date1String,
+          date2: date2String,
+          historicalHits: historicalHits,
+      });
     }
+    
+    // Store the calculated week checks for this set
+    setWeekChecksMap.set(currentSet.id, weekChecks);
   }
+  
+  // 3. Finalize detailed log by mapping WeekChecks back to input indices
+  detailedLogMap.forEach((entry, inputIndex) => {
+      const setWeekChecks = setWeekChecksMap.get(entry.analysisSetId);
+      if (setWeekChecks) {
+          entry.weekChecks = setWeekChecks;
+      }
+  });
 
   return {
     rawResults: rawFinalResults,

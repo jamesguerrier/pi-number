@@ -59,16 +59,23 @@ export type GeorgiaDatabaseRecord = z.infer<typeof GeorgiaDatabaseRecordSchema>;
 
 export type HistoricalHit = {
   week: number;
-  date: string; // yyyy-MM-dd
+  date: string; // yyyy-MM-dd (The date of the record where the number was found)
   numberFound: number;
   matchType: 'strict' | 'reverse';
 };
+
+export type WeekCheck = {
+  week: number;
+  date1: string; // Date of the first day checked (e.g., Lundi)
+  date2: string; // Date of the second day checked (e.g., Mardi)
+  historicalHits: HistoricalHit[]; // Hits found in this specific week
+}
 
 export type AnalysisLogEntry = {
   inputLabel: string; // e.g., "1er-AM"
   inputNumber: number; // The number the user entered
   analysisSetId: string; // e.g., "lunMar-firstLM"
-  historicalHits: HistoricalHit[];
+  weekChecks: WeekCheck[];
 };
 
 export type AnalysisLog = AnalysisLogEntry[];
