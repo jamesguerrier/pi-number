@@ -113,16 +113,23 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
     
     if (newAnalysisSets.length > 0) {
       // 2. Perform the full database analysis (6 weeks) using the Georgia-specific function
-      const { rawResults, detailedLog } = await performGeorgiaDatabaseAnalysis( // Destructure new return object
-        date,
-        tableName,
-        newAnalysisSets,
-        inputLabels,
-        numbers
-      );
-      
-      setRawFinalResults(rawResults);
-      setDetailedLog(detailedLog); // Set detailed log
+      try {
+        const { rawResults, detailedLog } = await performGeorgiaDatabaseAnalysis( // Destructure new return object
+          date,
+          tableName,
+          newAnalysisSets,
+          inputLabels,
+          numbers
+        );
+        
+        setRawFinalResults(rawResults);
+        setDetailedLog(detailedLog); // Set detailed log
+      } catch (error) {
+        console.error("Georgia analysis failed unexpectedly:", error);
+        alert("An unexpected error occurred during analysis. Please try again.");
+        setRawFinalResults([]);
+        setDetailedLog([]);
+      }
     } else {
       // If no sets were found, we still stop loading and show results (which will be empty)
       alert("No matching data found for entered numbers.");
