@@ -114,7 +114,7 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
     setAnalysisSets(newAnalysisSets);
     
     if (newAnalysisSets.length > 0) {
-      // 2. Perform the full database analysis (5 weeks)
+      // 2. Perform the full database analysis (6 weeks)
       const { rawResults, detailedLog } = await performDatabaseAnalysis( // Destructure new return object
         date,
         tableName,
@@ -151,7 +151,7 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-gray-800 dark:text-gray-100">{location} Analysis</CardTitle>
           <CardDescription className="text-gray-600 dark:text-gray-400">
-            Enter numbers and analyze their patterns across 5 weeks
+            Enter numbers and analyze their patterns across 6 preceding weeks
           </CardDescription>
         </CardHeader>
         
@@ -173,7 +173,7 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
           {isAnalyzing && (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-lg font-medium text-muted-foreground">Analyzing 5 weeks of historical data...</p>
+                <p className="text-lg font-medium text-muted-foreground">Analyzing 6 weeks of historical data...</p>
             </div>
           )}
 
