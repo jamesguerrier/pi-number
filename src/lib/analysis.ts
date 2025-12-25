@@ -67,7 +67,7 @@ function checkMatch(dbNum: number, targetNums: number[]): { number: number, type
 
 
 /**
- * Performs the full 8-week historical analysis against the database for all analysis sets (NY/FL).
+ * Performs the full 6-week historical analysis against the database for all analysis sets (NY/FL).
  * @param baseDate The date selected by the user.
  * @param locationTableName The name of the database table (e.g., 'new_york_data').
  * @param analysisSets The sets derived from the user's input numbers.
@@ -114,13 +114,10 @@ export async function performDatabaseAnalysis(
     const frenchDay1 = dayKeys[0];
     const frenchDay2 = dayKeys[1];
     
-    // Combine all target numbers from both days in the set
-    const allTargetNumbersInSet = [...days[frenchDay1], ...days[frenchDay2]];
-    
     const weekChecks: WeekCheck[] = [];
 
-    // Iterate through 8 weeks back (weeksBack = 1 to 8)
-    for (let weeksBack = 1; weeksBack <= 8; weeksBack++) {
+    // Iterate through 6 weeks back (weeksBack = 1 to 6)
+    for (let weeksBack = 1; weeksBack <= 6; weeksBack++) {
       const weekDates = getPreviousWeekDates(baseDate, frenchDay1, frenchDay2, weeksBack);
       
       const date1 = weekDates[frenchDay1];
@@ -160,13 +157,20 @@ export async function performDatabaseAnalysis(
           
           if (!isDay1 && !isDay2) continue;
 
-          // 3. Compare all database number fields against the COMBINED target numbers
+          // Determine the specific target numbers for this record's day (STRICT MATCHING)
+          let targetNumbersForRecord: number[] = [];
+          if (isDay1) {
+              targetNumbersForRecord = days[frenchDay1];
+          } else if (isDay2) {
+              targetNumbersForRecord = days[frenchDay2];
+          }
+
+          // 3. Compare all database number fields against the day-specific target numbers
           for (const field of NY_FL_DB_NUMBER_FIELDS) {
             const dbNum = record[field];
             
-            if (dbNum !== null && dbNum !== undefined && allTargetNumbersInSet.length > 0) {
-              // Use the combined list for matching
-              const matchResult = checkMatch(dbNum, allTargetNumbersInSet);
+            if (dbNum !== null && dbNum !== undefined && targetNumbersForRecord.length > 0) {
+              const matchResult = checkMatch(dbNum, targetNumbersForRecord);
               
               if (matchResult !== null) {
                 // A match was found! Record this hit.
@@ -218,7 +222,7 @@ export async function performDatabaseAnalysis(
 
 
 /**
- * Performs the full 8-week historical analysis against the database for all analysis sets (Georgia).
+ * Performs the full 6-week historical analysis against the database for all analysis sets (Georgia).
  * This function is specific to the Georgia table structure (10 number fields).
  */
 export async function performGeorgiaDatabaseAnalysis(
@@ -257,13 +261,10 @@ export async function performGeorgiaDatabaseAnalysis(
     const frenchDay1 = dayKeys[0];
     const frenchDay2 = dayKeys[1];
     
-    // Combine all target numbers from both days in the set
-    const allTargetNumbersInSet = [...days[frenchDay1], ...days[frenchDay2]];
-    
     const weekChecks: WeekCheck[] = [];
 
-    // Iterate through 8 weeks back (weeksBack = 1 to 8)
-    for (let weeksBack = 1; weeksBack <= 8; weeksBack++) {
+    // Iterate through 6 weeks back (weeksBack = 1 to 6)
+    for (let weeksBack = 1; weeksBack <= 6; weeksBack++) {
       const weekDates = getPreviousWeekDates(baseDate, frenchDay1, frenchDay2, weeksBack);
       
       const date1 = weekDates[frenchDay1];
@@ -302,13 +303,20 @@ export async function performGeorgiaDatabaseAnalysis(
           
           if (!isDay1 && !isDay2) continue;
 
-          // 3. Compare all database number fields against the COMBINED target numbers
+          // Determine the specific target numbers for this record's day (STRICT MATCHING)
+          let targetNumbersForRecord: number[] = [];
+          if (isDay1) {
+              targetNumbersForRecord = days[frenchDay1];
+          } else if (isDay2) {
+              targetNumbersForRecord = days[frenchDay2];
+          }
+
+          // 3. Compare all database number fields against the day-specific target numbers
           for (const field of GA_DB_NUMBER_FIELDS) {
             const dbNum = record[field];
             
-            if (dbNum !== null && dbNum !== undefined && allTargetNumbersInSet.length > 0) {
-              // Use the combined list for matching
-              const matchResult = checkMatch(dbNum, allTargetNumbersInSet);
+            if (dbNum !== null && dbNum !== undefined && targetNumbersForRecord.length > 0) {
+              const matchResult = checkMatch(dbNum, targetNumbersForRecord);
               
               if (matchResult !== null) {
                 // A match was found! Record this hit.

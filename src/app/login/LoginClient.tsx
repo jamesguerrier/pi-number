@@ -3,13 +3,16 @@
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { CardContent } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client'; // Import the singleton client
 
 interface LoginClientProps {
     view: 'sign_in' | 'sign_up' | 'forgotten_password' | 'update_password';
 }
 
 export default function LoginClient({ view }: LoginClientProps) {
+  
+  // Removed redundant client creation logic. Using the imported singleton client.
+
   return (
     <CardContent>
       <Auth

@@ -79,19 +79,29 @@ export function VerifierTool({ onMatchFound, inputA, setInputA }: VerifierToolPr
 
     setResults(foundMatches);
     
-    // Transfer unique MatchA numbers (green) to Loto-3 input ONLY when button is clicked
+    // Automatically transfer unique MatchA numbers (green) to Loto-3 input
     const sortedUniqueMatchA = Array.from(uniqueMatchA).sort((a, b) => a - b);
     const numberString = sortedUniqueMatchA.map(n => String(n).padStart(2, '0')).join(',');
     
     if (numberString) {
         onMatchFound(numberString);
-        toast.success(`Found ${foundMatches.length} match(es)! Transferred ${sortedUniqueMatchA.length} number(s) to Loto-3 Generator.`);
+    }
+    
+    // Show notification if matches were found
+    if (foundMatches.length > 0) {
+      toast.success(`Found ${foundMatches.length} match(es)!`);
     } else if (A.length > 0 && B.length > 0) {
       toast.info("No matches found between the two sets.");
-    } else {
-      toast.info("Please enter numbers in both sets to check for matches.");
     }
   }, [inputA, inputB, onMatchFound]);
+
+  // Automatically check matches when inputA changes (including when Paired Results are transferred)
+  useEffect(() => {
+    if (inputA.trim() && inputB.trim()) {
+      matchNumbers();
+      setAutoChecked(true);
+    }
+  }, [inputA, inputB, matchNumbers]);
 
   const handleManualCheck = () => {
     setAutoChecked(false);
@@ -129,7 +139,7 @@ export function VerifierTool({ onMatchFound, inputA, setInputA }: VerifierToolPr
 
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Info className="h-4 w-4" />
-          <span>Click "Check Matches" to find matches and transfer green numbers to Loto-3 Generator.</span>
+          <span>Matches are checked automatically when both sets have numbers.</span>
         </div>
 
         <Button onClick={handleManualCheck} className="w-full">
