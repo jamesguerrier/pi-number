@@ -6,6 +6,7 @@ import { Loader2, Database } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { isUserAdmin } from "@/lib/utils";
+import { redirect } from "next/navigation"; // Import redirect
 
 export default function GeorgiaPage() {
   const { isLoading, session, user } = useAuth();
@@ -19,7 +20,7 @@ export default function GeorgiaPage() {
   }
 
   if (!session) {
-    return null;
+    redirect("/login");
   }
   
   const isAdmin = isUserAdmin(user?.email);

@@ -3,6 +3,7 @@
 import { DataManagementPage } from "@/components/data-management-page";
 import { useAuth } from "@/context/auth-context";
 import { Loader2 } from "lucide-react";
+import { redirect } from "next/navigation"; // Import redirect
 
 export default function NewJerseyManagePage() {
   const { isLoading, session } = useAuth();
@@ -16,7 +17,7 @@ export default function NewJerseyManagePage() {
   }
 
   if (!session) {
-    return null;
+    redirect("/login");
   }
 
   return (

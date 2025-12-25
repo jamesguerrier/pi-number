@@ -3,6 +3,7 @@
 import { GeorgiaDataManagementPage } from "@/components/georgia-data-management-page";
 import { useAuth } from "@/context/auth-context";
 import { Loader2 } from "lucide-react";
+import { redirect } from "next/navigation"; // Import redirect
 
 export default function GeorgiaManagePage() {
   const { isLoading, session } = useAuth();
@@ -16,7 +17,7 @@ export default function GeorgiaManagePage() {
   }
 
   if (!session) {
-    return null;
+    redirect("/login");
   }
 
   return (

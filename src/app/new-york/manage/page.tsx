@@ -3,6 +3,7 @@
 import { DataManagementPage } from "@/components/data-management-page";
 import { useAuth } from "@/context/auth-context";
 import { Loader2 } from "lucide-react";
+import { redirect } from "next/navigation"; // Import redirect
 
 export default function NewYorkManagePage() {
   const { isLoading, session } = useAuth();
@@ -16,7 +17,7 @@ export default function NewYorkManagePage() {
   }
 
   if (!session) {
-    return null;
+    redirect("/login");
   }
 
   return (

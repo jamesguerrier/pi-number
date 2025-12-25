@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { VerifierTool } from "@/components/verifier-tool";
 import { Loto3Generator } from "@/components/loto3-generator";
 import { useState } from "react";
+import { redirect } from "next/navigation"; // Import redirect
 
 export default function VerifierPage() {
   const { isLoading, session } = useAuth();
@@ -20,8 +21,7 @@ export default function VerifierPage() {
   }
 
   if (!session) {
-    // Redirection handled by AuthProvider
-    return null;
+    redirect("/login");
   }
 
   return (

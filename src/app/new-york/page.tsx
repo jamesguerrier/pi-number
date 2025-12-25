@@ -6,6 +6,7 @@ import { Loader2, Database } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { isUserAdmin } from "@/lib/utils";
+import { redirect } from "next/navigation"; // Import redirect
 
 export default function NewYorkPage() {
   const { isLoading, session, user } = useAuth();
@@ -19,8 +20,7 @@ export default function NewYorkPage() {
   }
 
   if (!session) {
-    // Redirection handled by AuthProvider, but return null/loading state while redirecting
-    return null;
+    redirect("/login");
   }
   
   const isAdmin = isUserAdmin(user?.email);

@@ -3,14 +3,22 @@
 import { Card, CardHeader } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { AuthViewContent } from './AuthViewContent';
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 // Disable static rendering for this page as it relies heavily on client-side hooks and Supabase Auth UI.
 export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
   const { isLoading, session } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && session) {
+      router.replace('/new-york');
+    }
+  }, [isLoading, session, router]);
 
   if (isLoading) {
     return (
@@ -20,8 +28,7 @@ export default function LoginPage() {
     );
   }
 
-  // If already authenticated, the AuthProvider handles the redirect, 
-  // but return null while the redirect happens.
+  // If session exists, useEffect handles redirect, return null while waiting.
   if (session) {
     return null; 
   }
