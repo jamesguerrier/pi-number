@@ -168,13 +168,11 @@ export function Loto3Generator({ inputOverride, onTransferToVerifier }: Loto3Gen
         // AUTOMATIC TRANSFER: If results are valid, transfer them to the Verifier input
         if (resultString) {
             onTransferToVerifier(resultString);
-            toast.success("Paired numbers generated and automatically transferred to Verifier Set A (Green).");
+            toast.success("Paired numbers generated and automatically transferred to Verifier Set A (Green). Matches will be checked automatically if Set B has numbers.");
         } else {
             onTransferToVerifier('');
         }
     };
-    
-    // Removed handleTransfer function and the transfer button
 
     return (
         <Card className="w-full shadow-lg">

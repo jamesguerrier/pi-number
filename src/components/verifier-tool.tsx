@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VERIFIER_DATA } from '@/lib/verifierData';
 import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Info } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface MatchResult {
     matchA: number;
@@ -35,6 +36,7 @@ export function VerifierTool({ onMatchFound, inputA, setInputA }: VerifierToolPr
   // inputB remains local state
   const [inputB, setInputB] = useState('');
   const [results, setResults] = useState<MatchResult[]>([]);
+  const [autoChecked, setAutoChecked] = useState(false);
 
   useEffect(() => {
     const setAFromUrl = searchParams.get('setA');
@@ -44,7 +46,8 @@ export function VerifierTool({ onMatchFound, inputA, setInputA }: VerifierToolPr
     }
   }, [searchParams, setInputA]);
 
-  const matchNumbers = () => {
+  // Function to perform the matching logic
+  const matchNumbers = useCallback(() => {
     const A = parseInput(inputA);
     const B = parseInput(inputB);
     const foundMatches: MatchResult[] = [];
@@ -83,6 +86,26 @@ export function VerifierTool({ onMatchFound, inputA, setInputA }: VerifierToolPr
     if (numberString) {
         onMatchFound(numberString);
     }
+    
+    // Show notification if matches were found
+    if (foundMatches.length > 0) {
+      toast.success(`Found ${foundMatches.length} match(es)!`);
+    } else if (A.length > 0 && B.length > 0) {
+      toast.info("No matches found between the two sets.");
+    }
+  }, [inputA, inputB, onMatchFound]);
+
+  // Automatically check matches when inputA changes (including when Paired Results are transferred)
+  useEffect(() => {
+    if (inputA.trim() && inputB.trim()) {
+      matchNumbers();
+      setAutoChecked(true);
+    }
+  }, [inputA, inputB, matchNumbers]);
+
+  const handleManualCheck = () => {
+    setAutoChecked(false);
+    matchNumbers();
   };
 
   return (
@@ -114,9 +137,21 @@ export function VerifierTool({ onMatchFound, inputA, setInputA }: VerifierToolPr
           />
         </div>
 
-        <Button onClick={matchNumbers} className="w-full">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Info className="h-4 w-4" />
+          <span>Matches are checked automatically when both sets have numbers.</span>
+        </div>
+
+        <Button onClick={handleManualCheck} className="w-full">
           Check Matches
         </Button>
+
+        {autoChecked && (
+          <div className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            <span>Matches were automatically checked when numbers were added.</span>
+          </div>
+        )}
 
         <div className="result pt-4 border-t">
           <h3 className="text-xl font-bold mb-3">Results:</h3>
