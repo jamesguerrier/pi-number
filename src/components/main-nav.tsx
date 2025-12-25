@@ -9,9 +9,11 @@ import { useAuth } from "@/context/auth-context"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
 import { MobileNav } from "./mobile-nav"
+import { useState } from "react"
 
 export function MainNav() {
   const { session } = useAuth();
+  const [isSigningOut, setIsSigningOut] = useState(false);
   
   const navItems = [
     { href: "/new-york", label: "New York" },
@@ -22,12 +24,21 @@ export function MainNav() {
   ]
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Failed to sign out: " + error.message);
-    } else {
-      // Redirection handled by AuthProvider
-      toast.success("Successfully signed out.");
+    if (isSigningOut) return; // Prevent multiple clicks
+    
+    setIsSigningOut(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast.error("Failed to sign out: " + error.message);
+      } else {
+        toast.success("Successfully signed out.");
+      }
+    } catch (error) {
+      console.error("Sign out error:", error);
+      toast.error("An error occurred during sign out.");
+    } finally {
+      setIsSigningOut(false);
     }
   }
 
@@ -63,7 +74,13 @@ export function MainNav() {
         
         <div className="flex flex-1 items-center justify-end space-x-2">
           {session ? (
-            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleSignOut} 
+              title="Sign Out"
+              disabled={isSigningOut}
+            >
               <LogOut className="h-[1.2rem] w-[1.2rem]" />
               <span className="sr-only">Sign Out</span>
             </Button>

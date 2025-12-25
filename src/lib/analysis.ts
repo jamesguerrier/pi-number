@@ -67,7 +67,7 @@ function checkMatch(dbNum: number, targetNums: number[]): { number: number, type
 
 
 /**
- * Performs the full 6-week historical analysis against the database for all analysis sets (NY/FL).
+ * Performs the full 8-week historical analysis against the database for all analysis sets (NY/FL).
  * @param baseDate The date selected by the user.
  * @param locationTableName The name of the database table (e.g., 'new_york_data').
  * @param analysisSets The sets derived from the user's input numbers.
@@ -116,8 +116,8 @@ export async function performDatabaseAnalysis(
     
     const weekChecks: WeekCheck[] = [];
 
-    // Iterate through 6 weeks back (weeksBack = 1 to 6)
-    for (let weeksBack = 1; weeksBack <= 6; weeksBack++) {
+    // Iterate through 8 weeks back (weeksBack = 1 to 8)
+    for (let weeksBack = 1; weeksBack <= 8; weeksBack++) {
       const weekDates = getPreviousWeekDates(baseDate, frenchDay1, frenchDay2, weeksBack);
       
       const date1 = weekDates[frenchDay1];
@@ -169,30 +169,8 @@ export async function performDatabaseAnalysis(
           for (const field of NY_FL_DB_NUMBER_FIELDS) {
             const dbNum = record[field];
             
-            if (dbNum !== null && dbNum !== undefined && dbNum >= 0 && dbNum <= 99) {
-              let matchResult = null;
-              
-              // A. Standard Match Check (against the set's numbers)
-              if (targetNumbersForRecord.length > 0) {
-                  matchResult = checkMatch(dbNum, targetNumbersForRecord);
-              }
-              
-              // B. Special Rule Check for merJeu-secondMJ (override/addition)
-              if (matchResult === null && currentSet.id === 'merJeu-secondMJ') {
-                  if (isDay1) { // Day 1: mercredi (Wednesday)
-                      // Check for 01 or 10
-                      const specialTargets = [1, 10]; 
-                      if (specialTargets.includes(dbNum)) {
-                          matchResult = { number: dbNum, type: 'strict' };
-                      }
-                  } else if (isDay2) { // Day 2: jeudi (Thursday)
-                      // Check for 91 or 19
-                      const specialTargets = [19, 91]; 
-                      if (specialTargets.includes(dbNum)) {
-                          matchResult = { number: dbNum, type: 'strict' };
-                      }
-                  }
-              }
+            if (dbNum !== null && dbNum !== undefined && targetNumbersForRecord.length > 0) {
+              const matchResult = checkMatch(dbNum, targetNumbersForRecord);
               
               if (matchResult !== null) {
                 // A match was found! Record this hit.
@@ -244,7 +222,7 @@ export async function performDatabaseAnalysis(
 
 
 /**
- * Performs the full 6-week historical analysis against the database for all analysis sets (Georgia).
+ * Performs the full 8-week historical analysis against the database for all analysis sets (Georgia).
  * This function is specific to the Georgia table structure (10 number fields).
  */
 export async function performGeorgiaDatabaseAnalysis(
@@ -285,8 +263,8 @@ export async function performGeorgiaDatabaseAnalysis(
     
     const weekChecks: WeekCheck[] = [];
 
-    // Iterate through 6 weeks back (weeksBack = 1 to 6)
-    for (let weeksBack = 1; weeksBack <= 6; weeksBack++) {
+    // Iterate through 8 weeks back (weeksBack = 1 to 8)
+    for (let weeksBack = 1; weeksBack <= 8; weeksBack++) {
       const weekDates = getPreviousWeekDates(baseDate, frenchDay1, frenchDay2, weeksBack);
       
       const date1 = weekDates[frenchDay1];

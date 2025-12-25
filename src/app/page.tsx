@@ -4,24 +4,39 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Zap, History, GitCompare, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 export default function LandingPage() {
-  const { isLoading, session } = useAuth();
-  const router = useRouter();
+  const { loading, session } = useAuth();
 
-  useEffect(() => {
-    if (!isLoading && session) {
-      // If authenticated, redirect to the default protected page
-      router.replace('/new-york');
-    }
-  }, [isLoading, session, router]);
-
-  if (isLoading || session) {
+  if (loading) {
     return (
       <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If user is already authenticated, show a different message
+  if (session) {
+    return (
+      <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center p-4">
+        <Card className="shadow-xl max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold text-primary">
+              Welcome Back!
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground mb-4">
+              You are already signed in. Use the navigation menu to access the analysis tools.
+            </p>
+            <div className="flex justify-center gap-4">
+              <a href="/new-york" className="text-primary hover:underline">
+                Go to New York Analysis →
+              </a>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

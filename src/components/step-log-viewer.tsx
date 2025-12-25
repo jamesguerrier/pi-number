@@ -24,7 +24,7 @@ export function StepLogViewer({ detailedLog }: StepLogViewerProps) {
             </DialogTrigger>
             <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>Detailed Analysis Log (6 Weeks)</DialogTitle>
+                    <DialogTitle>Detailed Analysis Log (8 Weeks)</DialogTitle>
                 </DialogHeader>
                 
                 <ScrollArea className="flex-grow p-4 border rounded-lg bg-background">
