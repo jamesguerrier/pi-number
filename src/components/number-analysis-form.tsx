@@ -9,7 +9,7 @@ import { NumberInputSection } from "./number-input-section";
 import { FinalResultsSection } from "./final-results-section";
 import { performDatabaseAnalysis } from "@/lib/analysis";
 import { Loader2 } from "lucide-react";
-import { AnalysisLog } from "@/lib/schemas"; // Import new type
+import { AnalysisLog } from "@/lib/schemas";
 
 // Define types needed internally
 type MatchingResult = {
@@ -26,8 +26,10 @@ type AnalysisSet = {
 
 interface NumberAnalysisFormProps {
     location: string;
-    tableName: string; // Added tableName prop
+    tableName: string;
 }
+
+type AnalysisStep = 'input' | 'analyzing_day' | 'analyzing_moon' | 'results';
 
 export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -35,8 +37,8 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
   
   const [analysisSets, setAnalysisSets] = useState<AnalysisSet[]>([]);
   const [rawFinalResults, setRawFinalResults] = useState<string[]>([]);
-  const [detailedLog, setDetailedLog] = useState<AnalysisLog>([]); // New state for detailed log
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [detailedLog, setDetailedLog] = useState<AnalysisLog>([]);
+  const [step, setStep] = useState<AnalysisStep>('input');
 
   // Define the labels for the inputs
   const inputLabels = [
@@ -68,76 +70,119 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
     setNumbers(newNumbers);
   };
 
+  // Helper function to map inputs to sets for a given range of indices
+  const mapInputsToSets = (indices: number[]): AnalysisSet[] => {
+    const uniqueSetsMap = new Map<string, { indices: number[], result: MatchingResult }>();
+    
+    indices.forEach(index => {
+        const num = numbers[index];
+        if (num && !isNaN(parseInt(num))) {
+            const resultsForNum = findNumberInData(parseInt(num));
+            
+            if (resultsForNum.length > 0) {
+                const result = resultsForNum[0];
+                const setId = `${result.category}-${result.subCategory}`;
+                
+                if (!uniqueSetsMap.has(setId)) {
+                    uniqueSetsMap.set(setId, { indices: [index], result });
+                } else {
+                    uniqueSetsMap.get(setId)!.indices.push(index);
+                }
+            }
+        }
+    });
+
+    return Array.from(uniqueSetsMap.entries()).map(([id, data]) => ({
+        id,
+        inputIndices: data.indices,
+        matchingResult: data.result,
+    }));
+  };
+
+  // Helper function to perform analysis and return results
+  const runAnalysisStep = async (sets: AnalysisSet[]): Promise<{ rawResults: string[], detailedLog: AnalysisLog }> => {
+    if (sets.length === 0) {
+        return { rawResults: [], detailedLog: [] };
+    }
+    
+    return performDatabaseAnalysis(
+        date!,
+        tableName,
+        sets,
+        inputLabels,
+        numbers
+    );
+  };
+
   const handleNext = async () => {
     if (!date) return;
 
-    setIsAnalyzing(true);
-    setRawFinalResults([]); // Clear previous results
-    setDetailedLog([]); // Clear previous log
-    setAnalysisSets([]); // Clear previous sets
-
-    // 1. Map input numbers to unique analysis sets
-    const uniqueSetsMap = new Map<string, { indices: number[], result: MatchingResult }>();
+    const allInputsFilled = numbers.every(num => num && num.length === 2 && !isNaN(parseInt(num)));
     const validNumbers = numbers.filter(num => num && !isNaN(parseInt(num)));
 
     if (validNumbers.length === 0) {
         alert("Please enter at least one valid number.");
-        setIsAnalyzing(false);
         return;
     }
 
-    numbers.forEach((num, index) => {
-      if (num && !isNaN(parseInt(num))) {
-        const resultsForNum = findNumberInData(parseInt(num));
-        
-        // We only use the first matching result found for a number
-        if (resultsForNum.length > 0) {
-          const result = resultsForNum[0];
-          const setId = `${result.category}-${result.subCategory}`;
-          
-          if (!uniqueSetsMap.has(setId)) {
-            uniqueSetsMap.set(setId, { indices: [index], result });
-          } else {
-            uniqueSetsMap.get(setId)!.indices.push(index);
-          }
-        }
-      }
-    });
+    // Reset previous results
+    setRawFinalResults([]);
+    setDetailedLog([]);
+    setAnalysisSets([]);
 
-    const newAnalysisSets: AnalysisSet[] = Array.from(uniqueSetsMap.entries()).map(([id, data]) => ({
-      id,
-      inputIndices: data.indices,
-      matchingResult: data.result,
-    }));
-    
-    // Set the sets immediately so we can display them later
-    setAnalysisSets(newAnalysisSets);
-    
-    if (newAnalysisSets.length > 0) {
-      // 2. Perform the full database analysis (6 weeks)
-      try {
-        const { rawResults, detailedLog } = await performDatabaseAnalysis( // Destructure new return object
-          date,
-          tableName,
-          newAnalysisSets,
-          inputLabels,
-          numbers
-        );
+    let currentRawResults: string[] = [];
+    let currentDetailedLog: AnalysisLog = [];
+    let currentAnalysisSets: AnalysisSet[] = [];
+
+    if (allInputsFilled) {
+        // --- Two-Step Analysis (Day then Moon) ---
         
-        setRawFinalResults(rawResults);
-        setDetailedLog(detailedLog); // Set detailed log
-      } catch (error) {
-        console.error("Analysis failed unexpectedly:", error);
-        alert("An unexpected error occurred during analysis. Please try again.");
-        setRawFinalResults([]);
-        setDetailedLog([]);
-      }
+        // Step 1: Day Analysis (Indices 0, 1, 2)
+        setStep('analyzing_day');
+        const dayIndices = [0, 1, 2];
+        const daySets = mapInputsToSets(dayIndices);
+        currentAnalysisSets.push(...daySets);
+
+        if (daySets.length > 0) {
+            const { rawResults, detailedLog } = await runAnalysisStep(daySets);
+            currentRawResults.push(...rawResults);
+            currentDetailedLog.push(...detailedLog);
+        }
+
+        // Step 2: Moon Analysis (Indices 3, 4, 5)
+        setStep('analyzing_moon');
+        const moonIndices = [3, 4, 5];
+        const moonSets = mapInputsToSets(moonIndices);
+        currentAnalysisSets.push(...moonSets);
+
+        if (moonSets.length > 0) {
+            const { rawResults, detailedLog } = await runAnalysisStep(moonSets);
+            currentRawResults.push(...rawResults);
+            currentDetailedLog.push(...detailedLog);
+        }
+
     } else {
-      // If no sets were found, we still stop loading and show results (which will be empty)
-      alert("No matching data found for entered numbers.");
+        // --- Single-Step Analysis (Existing logic) ---
+        setStep('analyzing_day'); // Use 'analyzing_day' as a generic loading state for single step
+        
+        const allIndices = [0, 1, 2, 3, 4, 5];
+        const allSets = mapInputsToSets(allIndices.filter(i => numbers[i])); // Only map indices with valid input
+        currentAnalysisSets.push(...allSets);
+
+        if (allSets.length > 0) {
+            const { rawResults, detailedLog } = await runAnalysisStep(allSets);
+            currentRawResults.push(...rawResults);
+            currentDetailedLog.push(...detailedLog);
+        } else {
+            alert("No matching data found for entered numbers.");
+        }
     }
-    
-    setIsAnalyzing(false);
+
+    // Finalize state
+    setAnalysisSets(currentAnalysisSets);
+    setRawFinalResults(currentRawResults);
+    setDetailedLog(currentDetailedLog);
+    setStep('results');
   };
 
   const resetAnalysis = () => {
@@ -145,12 +190,22 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
     setNumbers(["", "", "", "", "", ""]);
     setAnalysisSets([]);
     setRawFinalResults([]);
-    setDetailedLog([]); // Reset detailed log
-    setIsAnalyzing(false);
+    setDetailedLog([]);
+    setStep('input');
   };
   
-  // Show results if analysisSets were calculated AND we are not currently analyzing
-  const showResults = analysisSets.length > 0 && !isAnalyzing;
+  // Update rendering logic based on step
+  const showResults = step === 'results';
+  const isAnalyzing = step.startsWith('analyzing');
+
+  // Determine loading message
+  let loadingMessage = "Analyzing historical data...";
+  if (step === 'analyzing_day') {
+    loadingMessage = "Step 1/2: Analyzing DAY numbers...";
+  } else if (step === 'analyzing_moon') {
+    loadingMessage = "Step 2/2: Analyzing MOON numbers...";
+  }
+
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
@@ -167,7 +222,7 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
           <DateInputSection date={date} setDate={setDate} />
 
           {/* Number Inputs Section */}
-          {!isAnalyzing && !showResults && (
+          {step === 'input' && (
             <NumberInputSection 
               numbers={numbers}
               inputLabels={inputLabels}
@@ -180,12 +235,12 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
           {isAnalyzing && (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-lg font-medium text-muted-foreground">Analyzing 6 weeks of historical data...</p>
+                <p className="text-lg font-medium text-muted-foreground">{loadingMessage}</p>
             </div>
           )}
 
           {/* Final Results Section */}
-          {!isAnalyzing && showResults && (
+          {showResults && (
             <FinalResultsSection
               formattedFinalResults={formattedFinalResults}
               mariagePairs={mariagePairs}
