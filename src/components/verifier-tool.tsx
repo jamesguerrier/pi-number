@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VERIFIER_DATA } from '@/lib/verifierData';
 import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle, Info } from 'lucide-react';
-import { toast } from 'sonner';
+import { CheckCircle } from 'lucide-react';
 
 interface MatchResult {
     matchA: number;
@@ -36,7 +35,6 @@ export function VerifierTool({ onMatchFound, inputA, setInputA }: VerifierToolPr
   // inputB remains local state
   const [inputB, setInputB] = useState('');
   const [results, setResults] = useState<MatchResult[]>([]);
-  const [autoChecked, setAutoChecked] = useState(false);
 
   useEffect(() => {
     const setAFromUrl = searchParams.get('setA');
@@ -46,8 +44,7 @@ export function VerifierTool({ onMatchFound, inputA, setInputA }: VerifierToolPr
     }
   }, [searchParams, setInputA]);
 
-  // Function to perform the matching logic
-  const matchNumbers = useCallback(() => {
+  const matchNumbers = () => {
     const A = parseInput(inputA);
     const B = parseInput(inputB);
     const foundMatches: MatchResult[] = [];
@@ -79,23 +76,13 @@ export function VerifierTool({ onMatchFound, inputA, setInputA }: VerifierToolPr
 
     setResults(foundMatches);
     
-    // Transfer unique MatchA numbers (green) to Loto-3 input ONLY when button is clicked
+    // Automatically transfer unique MatchA numbers (green) to Loto-3 input
     const sortedUniqueMatchA = Array.from(uniqueMatchA).sort((a, b) => a - b);
     const numberString = sortedUniqueMatchA.map(n => String(n).padStart(2, '0')).join(',');
     
     if (numberString) {
         onMatchFound(numberString);
-        toast.success(`Found ${foundMatches.length} match(es)! Transferred ${sortedUniqueMatchA.length} number(s) to Loto-3 Generator.`);
-    } else if (A.length > 0 && B.length > 0) {
-      toast.info("No matches found between the two sets.");
-    } else {
-      toast.info("Please enter numbers in both sets to check for matches.");
     }
-  }, [inputA, inputB, onMatchFound]);
-
-  const handleManualCheck = () => {
-    setAutoChecked(false);
-    matchNumbers();
   };
 
   return (
@@ -127,21 +114,9 @@ export function VerifierTool({ onMatchFound, inputA, setInputA }: VerifierToolPr
           />
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Info className="h-4 w-4" />
-          <span>Click "Check Matches" to find matches and transfer green numbers to Loto-3 Generator.</span>
-        </div>
-
-        <Button onClick={handleManualCheck} className="w-full">
+        <Button onClick={matchNumbers} className="w-full">
           Check Matches
         </Button>
-
-        {autoChecked && (
-          <div className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            <span>Matches were automatically checked when numbers were added.</span>
-          </div>
-        )}
 
         <div className="result pt-4 border-t">
           <h3 className="text-xl font-bold mb-3">Results:</h3>

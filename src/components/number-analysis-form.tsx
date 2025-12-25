@@ -29,7 +29,7 @@ interface NumberAnalysisFormProps {
     tableName: string;
 }
 
-type AnalysisStep = 'input' | 'analyzing_1' | 'analyzing_2' | 'analyzing_3' | 'analyzing_4' | 'analyzing_5' | 'analyzing_6' | 'results';
+type AnalysisStep = 'input' | 'analyzing_day' | 'analyzing_moon' | 'results';
 
 export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -39,7 +39,6 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
   const [rawFinalResults, setRawFinalResults] = useState<string[]>([]);
   const [detailedLog, setDetailedLog] = useState<AnalysisLog>([]);
   const [step, setStep] = useState<AnalysisStep>('input');
-  const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
 
   // Define the labels for the inputs
   const inputLabels = [
@@ -118,6 +117,7 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
   const handleNext = async () => {
     if (!date) return;
 
+    const allInputsFilled = numbers.every(num => num && num.length === 2 && !isNaN(parseInt(num)));
     const validNumbers = numbers.filter(num => num && !isNaN(parseInt(num)));
 
     if (validNumbers.length === 0) {
@@ -129,40 +129,41 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
     setRawFinalResults([]);
     setDetailedLog([]);
     setAnalysisSets([]);
-    setCurrentStepIndex(0);
 
     let currentRawResults: string[] = [];
     let currentDetailedLog: AnalysisLog = [];
     let currentAnalysisSets: AnalysisSet[] = [];
 
-    // Check if all 6 inputs are filled with 2 digits
-    const allInputsFilled = numbers.every(num => num && num.length === 2 && !isNaN(parseInt(num)));
-
     if (allInputsFilled) {
-        // --- Six-Step Analysis (One step per input) ---
+        // --- Two-Step Analysis (Day then Moon) ---
         
-        for (let i = 0; i < 6; i++) {
-            setStep(`analyzing_${i + 1}` as AnalysisStep);
-            setCurrentStepIndex(i);
-            
-            const currentIndices = [i];
-            const currentSets = mapInputsToSets(currentIndices);
-            currentAnalysisSets.push(...currentSets);
+        // Step 1: Day Analysis (Indices 0, 1, 2)
+        setStep('analyzing_day');
+        const dayIndices = [0, 1, 2];
+        const daySets = mapInputsToSets(dayIndices);
+        currentAnalysisSets.push(...daySets);
 
-            if (currentSets.length > 0) {
-                const { rawResults, detailedLog } = await runAnalysisStep(currentSets);
-                currentRawResults.push(...rawResults);
-                currentDetailedLog.push(...detailedLog);
-            }
-            
-            // Small delay to show progress
-            await new Promise(resolve => setTimeout(resolve, 300));
+        if (daySets.length > 0) {
+            const { rawResults, detailedLog } = await runAnalysisStep(daySets);
+            currentRawResults.push(...rawResults);
+            currentDetailedLog.push(...detailedLog);
+        }
+
+        // Step 2: Moon Analysis (Indices 3, 4, 5)
+        setStep('analyzing_moon');
+        const moonIndices = [3, 4, 5];
+        const moonSets = mapInputsToSets(moonIndices);
+        currentAnalysisSets.push(...moonSets);
+
+        if (moonSets.length > 0) {
+            const { rawResults, detailedLog } = await runAnalysisStep(moonSets);
+            currentRawResults.push(...rawResults);
+            currentDetailedLog.push(...detailedLog);
         }
 
     } else {
-        // --- Single-Step Analysis (Existing logic for partial inputs) ---
-        setStep('analyzing_1');
-        setCurrentStepIndex(0);
+        // --- Single-Step Analysis (Existing logic) ---
+        setStep('analyzing_day'); // Use 'analyzing_day' as a generic loading state for single step
         
         const allIndices = [0, 1, 2, 3, 4, 5];
         const allSets = mapInputsToSets(allIndices.filter(i => numbers[i])); // Only map indices with valid input
@@ -191,7 +192,6 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
     setRawFinalResults([]);
     setDetailedLog([]);
     setStep('input');
-    setCurrentStepIndex(0);
   };
   
   // Update rendering logic based on step
@@ -200,11 +200,12 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
 
   // Determine loading message
   let loadingMessage = "Analyzing historical data...";
-  if (isAnalyzing && currentStepIndex < 6) {
-    const stepNumber = currentStepIndex + 1;
-    const inputLabel = inputLabels[currentStepIndex];
-    loadingMessage = `Step ${stepNumber}/6: Analyzing ${inputLabel}...`;
+  if (step === 'analyzing_day') {
+    loadingMessage = "Step 1/2: Analyzing DAY numbers...";
+  } else if (step === 'analyzing_moon') {
+    loadingMessage = "Step 2/2: Analyzing MOON numbers...";
   }
+
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
@@ -212,7 +213,7 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-gray-800 dark:text-gray-100">{location} Analysis</CardTitle>
           <CardDescription className="text-gray-600 dark:text-gray-400">
-            Enter numbers and analyze their patterns across 8 preceding weeks
+            Enter numbers and analyze their patterns across 6 preceding weeks
           </CardDescription>
         </CardHeader>
         
@@ -235,14 +236,6 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
                 <p className="text-lg font-medium text-muted-foreground">{loadingMessage}</p>
-                {currentStepIndex < 6 && (
-                  <div className="w-full max-w-md bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                    <div 
-                      className="bg-primary h-2.5 rounded-full transition-all duration-300" 
-                      style={{ width: `${((currentStepIndex + 1) / 6) * 100}%` }}
-                    ></div>
-                  </div>
-                )}
             </div>
           )}
 
