@@ -114,6 +114,9 @@ export async function performDatabaseAnalysis(
     const frenchDay1 = dayKeys[0];
     const frenchDay2 = dayKeys[1];
     
+    // Combine all target numbers from both days in the set
+    const allTargetNumbersInSet = [...days[frenchDay1], ...days[frenchDay2]];
+    
     const weekChecks: WeekCheck[] = [];
 
     // Iterate through 8 weeks back (weeksBack = 1 to 8)
@@ -157,20 +160,13 @@ export async function performDatabaseAnalysis(
           
           if (!isDay1 && !isDay2) continue;
 
-          // Determine the specific target numbers for this record's day (STRICT MATCHING)
-          let targetNumbersForRecord: number[] = [];
-          if (isDay1) {
-              targetNumbersForRecord = days[frenchDay1];
-          } else if (isDay2) {
-              targetNumbersForRecord = days[frenchDay2];
-          }
-
-          // 3. Compare all database number fields against the day-specific target numbers
+          // 3. Compare all database number fields against the COMBINED target numbers
           for (const field of NY_FL_DB_NUMBER_FIELDS) {
             const dbNum = record[field];
             
-            if (dbNum !== null && dbNum !== undefined && targetNumbersForRecord.length > 0) {
-              const matchResult = checkMatch(dbNum, targetNumbersForRecord);
+            if (dbNum !== null && dbNum !== undefined && allTargetNumbersInSet.length > 0) {
+              // Use the combined list for matching
+              const matchResult = checkMatch(dbNum, allTargetNumbersInSet);
               
               if (matchResult !== null) {
                 // A match was found! Record this hit.
@@ -261,6 +257,9 @@ export async function performGeorgiaDatabaseAnalysis(
     const frenchDay1 = dayKeys[0];
     const frenchDay2 = dayKeys[1];
     
+    // Combine all target numbers from both days in the set
+    const allTargetNumbersInSet = [...days[frenchDay1], ...days[frenchDay2]];
+    
     const weekChecks: WeekCheck[] = [];
 
     // Iterate through 8 weeks back (weeksBack = 1 to 8)
@@ -303,20 +302,13 @@ export async function performGeorgiaDatabaseAnalysis(
           
           if (!isDay1 && !isDay2) continue;
 
-          // Determine the specific target numbers for this record's day (STRICT MATCHING)
-          let targetNumbersForRecord: number[] = [];
-          if (isDay1) {
-              targetNumbersForRecord = days[frenchDay1];
-          } else if (isDay2) {
-              targetNumbersForRecord = days[frenchDay2];
-          }
-
-          // 3. Compare all database number fields against the day-specific target numbers
+          // 3. Compare all database number fields against the COMBINED target numbers
           for (const field of GA_DB_NUMBER_FIELDS) {
             const dbNum = record[field];
             
-            if (dbNum !== null && dbNum !== undefined && targetNumbersForRecord.length > 0) {
-              const matchResult = checkMatch(dbNum, targetNumbersForRecord);
+            if (dbNum !== null && dbNum !== undefined && allTargetNumbersInSet.length > 0) {
+              // Use the combined list for matching
+              const matchResult = checkMatch(dbNum, allTargetNumbersInSet);
               
               if (matchResult !== null) {
                 // A match was found! Record this hit.
