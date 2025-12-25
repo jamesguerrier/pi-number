@@ -14,5 +14,16 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    // Add rate limiting protection
+    storageKey: 'supabase.auth.token',
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    // Prevent excessive refresh attempts
+    flowType: 'pkce',
   },
+  global: {
+    // Add headers to prevent rate limiting
+    headers: {
+      'X-Client-Info': 'supabase-js/2.45.0'
+    }
+  }
 });

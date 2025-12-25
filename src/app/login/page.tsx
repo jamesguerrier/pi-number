@@ -16,6 +16,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && session) {
+      // Use replace instead of push to avoid adding to history
       router.replace('/new-york');
     }
   }, [isLoading, session, router]);
