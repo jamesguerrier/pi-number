@@ -27,7 +27,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setIsLoading(false);
+      
+      // Only set loading to false after the initial session check is complete
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        setIsLoading(false);
+      }
 
       if (event === 'SIGNED_IN' && pathname === '/login') {
         router.push('/new-york'); // Redirect signed-in users from login page
@@ -43,13 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsLoading(false);
-    });
-
+    // We rely entirely on the onAuthStateChange listener for session state.
+    // The 'INITIAL_SESSION' event handles the first load.
+    
     return () => subscription.unsubscribe();
   }, [router, pathname]);
 
@@ -62,8 +62,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Unauthenticated user trying to access a protected route
         router.push('/login');
       }
-      
-      // Note: Redirection from /login to /new-york on SIGNED_IN is handled in onAuthStateChange
     }
   }, [isLoading, session, pathname, router]);
 

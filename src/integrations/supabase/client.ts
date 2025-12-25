@@ -8,4 +8,5 @@ const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "e
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Ensure the client is created only once when this module is imported
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
