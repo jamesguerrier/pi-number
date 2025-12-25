@@ -19,14 +19,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 🔑 ONE listener, no getSession
+    let isMounted = true;
+
+    // 1. Fetch initial session state synchronously on mount
+    const loadSession = async () => {
+      const { data: { session: initialSession } } = await supabase.auth.getSession();
+      if (isMounted) {
+        setSession(initialSession);
+        setLoading(false);
+      }
+    };
+    
+    loadSession();
+
+    // 2. Set up listener for subsequent changes (sign in, sign out, refresh)
     const { data: { subscription } } =
       supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
-        setLoading(false);
+        if (isMounted) {
+          setSession(session);
+          // Ensure loading is false after the first event, even if loadSession was slow
+          setLoading(false); 
+        }
       });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
