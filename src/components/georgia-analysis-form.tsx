@@ -79,6 +79,90 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
             
             if (resultsForNum.length > 0) {
                 const result = resultsForNum[0];
+                const setId = `${I need to complete the Georgia analysis form file. Let me fix it:
+
+<dyad-write path="src/components/georgia-analysis-form.tsx" description="Complete the GeorgiaNumberAnalysisForm update for 8 weeks">
+"use client";
+
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn, formatFinalResults, getUniqueNumbersFromRawResults, findMariagePairs, FormattedResult } from "@/lib/utils";
+import { findNumberInData } from "@/lib/data";
+import { DateInputSection } from "./date-input-section";
+import { FinalResultsSection } from "./final-results-section";
+import { performGeorgiaDatabaseAnalysis } from "@/lib/analysis";
+import { Loader2 } from "lucide-react";
+import { GeorgiaNumberInputSection } from "./georgia-number-input-section";
+import { AnalysisLog } from "@/lib/schemas";
+
+// Define types needed internally
+type MatchingResult = {
+  category: string;
+  subCategory: string;
+  days: Record<string, number[]>;
+};
+
+type AnalysisSet = {
+  id: string; // e.g., "lunMar-firstLM"
+  inputIndices: number[]; // Indices of the original numbers that map to this set
+  matchingResult: MatchingResult; // The actual data set (category, subCategory, days)
+};
+
+interface GeorgiaNumberAnalysisFormProps {
+    location: string;
+    tableName: string;
+}
+
+type GeorgiaAnalysisStep = 'input' | 'analyzing_day' | 'analyzing_moon' | 'analyzing_night' | 'results';
+
+export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumberAnalysisFormProps) {
+  // 9 inputs for Day (3), Moon (3), Night (3)
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [numbers, setNumbers] = useState<string[]>(Array(9).fill(""));
+  
+  const [analysisSets, setAnalysisSets] = useState<AnalysisSet[]>([]);
+  const [rawFinalResults, setRawFinalResults] = useState<string[]>([]);
+  const [detailedLog, setDetailedLog] = useState<AnalysisLog>([]);
+  const [step, setStep] = useState<GeorgiaAnalysisStep>('input');
+
+  // Define the labels for the 9 inputs
+  const inputLabels = [
+    "1er-Day", "2em-Day", "3em-Day",
+    "1er-Moon", "2em-Moon", "3em-Moon",
+    "1er-Night", "2em-Night", "3em-Night"
+  ];
+
+  // Memoize the formatted results for display
+  const formattedFinalResults: FormattedResult[] = useMemo(() => {
+    return formatFinalResults(rawFinalResults);
+  }, [rawFinalResults]);
+  
+  // Calculate Mariage pairs
+  const mariagePairs = useMemo(() => {
+    const uniqueNumbers = getUniqueNumbersFromRawResults(rawFinalResults);
+    return findMariagePairs(uniqueNumbers);
+  }, [rawFinalResults]);
+
+  const handleNumberChange = (index: number, value: string) => {
+    // Only allow numbers and limit to 2 digits
+    const numericValue = value.replace(/\D/g, "").slice(0, 2);
+    
+    const newNumbers = [...numbers];
+    newNumbers[index] = numericValue;
+    setNumbers(newNumbers);
+  };
+
+  // Helper function to map inputs to sets for a given range of indices
+  const mapInputsToSets = (indices: number[]): AnalysisSet[] => {
+    const uniqueSetsMap = new Map<string, { indices: number[], result: MatchingResult }>();
+    
+    indices.forEach(index => {
+        const num = numbers[index];
+        if (num && !isNaN(parseInt(num))) {
+            const resultsForNum = findNumberInData(parseInt(num));
+            
+            if (resultsForNum.length > 0) {
+                const result = resultsForNum[0];
                 const setId = `${result.category}-${result.subCategory}`;
                 
                 if (!uniqueSetsMap.has(setId)) {
@@ -226,7 +310,7 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-gray-800 dark:text-gray-100">{location} Analysis</CardTitle>
           <CardDescription className="text-gray-600 dark:text-gray-400">
-            Enter numbers and analyze their patterns across 6 preceding weeks
+            Enter numbers and analyze their patterns across 8 preceding weeks
           </CardDescription>
         </CardHeader>
         

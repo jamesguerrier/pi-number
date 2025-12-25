@@ -67,7 +67,7 @@ function checkMatch(dbNum: number, targetNums: number[]): { number: number, type
 
 
 /**
- * Performs the full 6-week historical analysis against the database for all analysis sets (NY/FL).
+ * Performs the full 8-week historical analysis against the database for all analysis sets (NY/FL).
  * @param baseDate The date selected by the user.
  * @param locationTableName The name of the database table (e.g., 'new_york_data').
  * @param analysisSets The sets derived from the user's input numbers.
@@ -116,8 +116,8 @@ export async function performDatabaseAnalysis(
     
     const weekChecks: WeekCheck[] = [];
 
-    // Iterate through 6 weeks back (weeksBack = 1 to 6)
-    for (let weeksBack = 1; weeksBack <= 6; weeksBack++) {
+    // Iterate through 8 weeks back (weeksBack = 1 to 8)
+    for (let weeksBack = 1; weeksBack <= 8; weeksBack++) {
       const weekDates = getPreviousWeekDates(baseDate, frenchDay1, frenchDay2, weeksBack);
       
       const date1 = weekDates[frenchDay1];
@@ -222,7 +222,7 @@ export async function performDatabaseAnalysis(
 
 
 /**
- * Performs the full 6-week historical analysis against the database for all analysis sets (Georgia).
+ * Performs the full 8-week historical analysis against the database for all analysis sets (Georgia).
  * This function is specific to the Georgia table structure (10 number fields).
  */
 export async function performGeorgiaDatabaseAnalysis(
@@ -263,8 +263,8 @@ export async function performGeorgiaDatabaseAnalysis(
     
     const weekChecks: WeekCheck[] = [];
 
-    // Iterate through 6 weeks back (weeksBack = 1 to 6)
-    for (let weeksBack = 1; weeksBack <= 6; weeksBack++) {
+    // Iterate through 8 weeks back (weeksBack = 1 to 8)
+    for (let weeksBack = 1; weeksBack <= 8; weeksBack++) {
       const weekDates = getPreviousWeekDates(baseDate, frenchDay1, frenchDay2, weeksBack);
       
       const date1 = weekDates[frenchDay1];

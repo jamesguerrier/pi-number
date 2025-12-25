@@ -213,7 +213,7 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-gray-800 dark:text-gray-100">{location} Analysis</CardTitle>
           <CardDescription className="text-gray-600 dark:text-gray-400">
-            Enter numbers and analyze their patterns across 6 preceding weeks
+            Enter numbers and analyze their patterns across 8 preceding weeks
           </CardDescription>
         </CardHeader>
         
