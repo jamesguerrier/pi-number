@@ -169,8 +169,30 @@ export async function performDatabaseAnalysis(
           for (const field of NY_FL_DB_NUMBER_FIELDS) {
             const dbNum = record[field];
             
-            if (dbNum !== null && dbNum !== undefined && targetNumbersForRecord.length > 0) {
-              const matchResult = checkMatch(dbNum, targetNumbersForRecord);
+            if (dbNum !== null && dbNum !== undefined && dbNum >= 0 && dbNum <= 99) {
+              let matchResult = null;
+              
+              // A. Standard Match Check (against the set's numbers)
+              if (targetNumbersForRecord.length > 0) {
+                  matchResult = checkMatch(dbNum, targetNumbersForRecord);
+              }
+              
+              // B. Special Rule Check for merJeu-secondMJ (override/addition)
+              if (matchResult === null && currentSet.id === 'merJeu-secondMJ') {
+                  if (isDay1) { // Day 1: mercredi (Wednesday)
+                      // Check for 01 or 10
+                      const specialTargets = [1, 10]; 
+                      if (specialTargets.includes(dbNum)) {
+                          matchResult = { number: dbNum, type: 'strict' };
+                      }
+                  } else if (isDay2) { // Day 2: jeudi (Thursday)
+                      // Check for 91 or 19
+                      const specialTargets = [19, 91]; 
+                      if (specialTargets.includes(dbNum)) {
+                          matchResult = { number: dbNum, type: 'strict' };
+                      }
+                  }
+              }
               
               if (matchResult !== null) {
                 // A match was found! Record this hit.
