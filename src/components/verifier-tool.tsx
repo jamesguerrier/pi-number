@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import { SetAAnalysisButton } from './set-a-analysis-button';
 
 interface MatchResult {
     matchA: number;
@@ -115,6 +116,9 @@ export function VerifierTool({ onMatchFound, inputA, setInputA }: VerifierToolPr
       </CardHeader>
       <CardContent className="space-y-6">
         
+        {/* New Analysis Button */}
+        <SetAAnalysisButton inputA={inputA} />
+
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Input Set A (Green)</h3>
           <Textarea 
