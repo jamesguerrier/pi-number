@@ -7,6 +7,8 @@ import { FormattedResult, cn, getUniqueNumbersFromRawResults, getUniqueAndNonRev
 import { AnalysisLog, AnalysisLogEntry } from "@/lib/schemas";
 import { StepLogViewer } from "./step-log-viewer";
 import { useRouter } from "next/navigation";
+import { getDayNameFromDate } from "@/lib/dateUtils";
+import { parseISO } from "date-fns";
 
 // Define types needed internally for display
 interface MatchingResult {
@@ -40,34 +42,29 @@ type GroupedDayHits = Record<string, DayHit[]>;
 
 /**
  * Processes the detailed log to group all historical hits by the English day name 
- * corresponding to the analysis set day (e.g., Lundi -> Monday, Mardi -> Tuesday).
+ * (e.g., Monday, Tuesday) where the hit occurred.
  */
-function groupHitsByAnalysisDay(detailedLog: AnalysisLog): GroupedDayHits {
+function groupHitsByDay(detailedLog: AnalysisLog): GroupedDayHits {
     const grouped: GroupedDayHits = {};
 
     detailedLog.forEach(entry => {
         entry.weekChecks.forEach(check => {
-            const frenchDay1 = check.frenchDay1;
-            const date1 = check.date1;
-            const frenchDay2 = check.frenchDay2;
-            const date2 = check.date2;
-
             check.historicalHits.forEach(hit => {
-                // Determine which French day (day1 or day2) this historical hit date corresponds to
-                const dayKey = hit.date === date1 ? frenchDay1 : frenchDay2;
-                const englishDayName = getEnglishDayName(dayKey);
+                // hit.date is a string 'yyyy-MM-dd'
+                const dateObj = parseISO(hit.date);
+                const dayName = getDayNameFromDate(dateObj); // e.g., "Monday"
                 
-                if (!grouped[englishDayName]) {
-                    grouped[englishDayName] = [];
+                if (!grouped[dayName]) {
+                    grouped[dayName] = [];
                 }
                 
                 // Check for duplicates: only add unique number/type combinations per day
-                const isDuplicate = grouped[englishDayName].some(
+                const isDuplicate = grouped[dayName].some(
                     existingHit => existingHit.number === hit.numberFound && existingHit.type === hit.matchType
                 );
 
                 if (!isDuplicate) {
-                    grouped[englishDayName].push({
+                    grouped[dayName].push({
                         number: hit.numberFound,
                         type: hit.matchType
                     });
@@ -89,7 +86,7 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
     const router = useRouter();
     
     // Calculate grouped day hits
-    const groupedDayHits = groupHitsByAnalysisDay(detailedLog);
+    const groupedDayHits = groupHitsByDay(detailedLog);
     const dayNames = Object.keys(groupedDayHits).sort((a, b) => {
         // Custom sort order for days of the week (starting Monday)
         const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -182,11 +179,11 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
                 </div>
             </div>
 
-            {/* Grouped Day Hits Section */}
+            {/* New Day Hits Section */}
             {dayNames.length > 0 && (
                 <div className="space-y-2">
                     <h4 className="font-semibold text-lg mb-2 border-b pb-1 text-purple-600 dark:text-purple-400">
-                        Historical Hits Grouped by Analysis Day (Last 7 Weeks)
+                        Historical Hits and Day Name (Last 7 Weeks)
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {dayNames.map((dayName) => (

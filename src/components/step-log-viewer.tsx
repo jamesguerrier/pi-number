@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { format } from "date-fns";
 import { ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getEnglishDayName } from "@/lib/data"; // Import getEnglishDayName
 
 interface StepLogViewerProps {
     detailedLog: AnalysisLog;
@@ -80,9 +79,7 @@ function LogEntryTable({ entry }: LogEntryTableProps) {
                         <TableRow key={check.week}>
                             <TableCell className="font-medium">Week {check.week}</TableCell>
                             <TableCell className="text-xs">
-                                <span className="font-semibold capitalize">{getEnglishDayName(check.frenchDay1)}:</span> {format(new Date(check.date1), 'MMM dd, yyyy')}
-                                <br />
-                                <span className="font-semibold capitalize">{getEnglishDayName(check.frenchDay2)}:</span> {format(new Date(check.date2), 'MMM dd, yyyy')}
+                                {format(new Date(check.date1), 'MMM dd, yyyy')} & {format(new Date(check.date2), 'MMM dd, yyyy')}
                             </TableCell>
                             <TableCell>
                                 {check.historicalHits.length > 0 ? (
