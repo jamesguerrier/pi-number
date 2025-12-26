@@ -144,7 +144,7 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
             {/* Individual Hits Section */}
             <div className="space-y-2">
                 <div className="flex justify-between items-center border-b pb-1 mb-2">
-                    <h4 className="font-semibold text-lg text-green-600 dark:text-green-400">Historical Hits (Last 6 Weeks)</h4>
+                    <h4 className="font-semibold text-lg text-green-600 dark:text-green-400">Historical Hits (Last 7 Weeks)</h4>
                     <div className="flex gap-3 text-xs font-medium">
                         <span className="flex items-center gap-1">
                             <span className="h-3 w-3 rounded-full bg-red-500"></span> Strict Match
@@ -174,7 +174,7 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
                             ))}
                         </div>
                     ) : (
-                        <p className="text-gray-500 italic">No historical matches found across the last 6 weeks.</p>
+                        <p className="text-gray-500 italic">No historical matches found across the last 7 weeks.</p>
                     )}
                 </div>
             </div>
@@ -183,7 +183,7 @@ export function FinalResultsSection({ formattedFinalResults, mariagePairs, analy
             {dayNames.length > 0 && (
                 <div className="space-y-2">
                     <h4 className="font-semibold text-lg mb-2 border-b pb-1 text-purple-600 dark:text-purple-400">
-                        Historical Hits and Day Name (Last 6 Weeks)
+                        Historical Hits and Day Name (Last 7 Weeks)
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {dayNames.map((dayName) => (
