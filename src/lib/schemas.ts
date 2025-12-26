@@ -66,7 +66,9 @@ export type HistoricalHit = {
 
 export type WeekCheck = {
   week: number;
+  frenchDay1: string; // e.g., 'lundi'
   date1: string; // Date of the first day checked (e.g., Lundi)
+  frenchDay2: string; // e.g., 'mardi'
   date2: string; // Date of the second day checked (e.g., Mardi)
   historicalHits: HistoricalHit[]; // Hits found in this specific week
 }

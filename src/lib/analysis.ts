@@ -142,7 +142,9 @@ export async function performDatabaseAnalysis(
         // Still record the week check even if fetch failed
         weekChecks.push({
             week: weeksBack,
+            frenchDay1: frenchDay1,
             date1: date1String,
+            frenchDay2: frenchDay2,
             date2: date2String,
             historicalHits: [],
         });
@@ -192,7 +194,9 @@ export async function performDatabaseAnalysis(
       // Record the week check with all hits found (or none)
       weekChecks.push({
           week: weeksBack,
+          frenchDay1: frenchDay1,
           date1: date1String,
+          frenchDay2: frenchDay2,
           date2: date2String,
           historicalHits: historicalHits,
       });
@@ -284,7 +288,9 @@ export async function performGeorgiaDatabaseAnalysis(
         console.error(`Error fetching data for ${locationTableName} week ${weeksBack}:`, error);
         weekChecks.push({
             week: weeksBack,
+            frenchDay1: frenchDay1,
             date1: date1String,
+            frenchDay2: frenchDay2,
             date2: date2String,
             historicalHits: [],
         });
@@ -334,7 +340,9 @@ export async function performGeorgiaDatabaseAnalysis(
       // Record the week check with all hits found (or none)
       weekChecks.push({
           week: weeksBack,
+          frenchDay1: frenchDay1,
           date1: date1String,
+          frenchDay2: frenchDay2,
           date2: date2String,
           historicalHits: historicalHits,
       });
