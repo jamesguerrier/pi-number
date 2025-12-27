@@ -79,3 +79,11 @@ export type AnalysisLogEntry = {
 };
 
 export type AnalysisLog = AnalysisLogEntry[];
+
+// --- Historical Verification Type ---
+export type HistoricalVerificationHit = {
+  date: string; // yyyy-MM-dd
+  numberFound: number;
+  matchType: 'strict' | 'reverse';
+  tableName: string;
+};

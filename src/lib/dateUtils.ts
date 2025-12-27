@@ -65,3 +65,35 @@ export function formatDateFrench(date: Date): string {
 export function getDayNameFromDate(date: Date): string {
   return format(date, 'EEEE');
 }
+
+/**
+ * Gets the date of a specific target day (English name) for a given week back, 
+ * relative to the base date.
+ */
+export function getPreviousTargetDayDate(baseDate: Date, targetDayEnglish: string, weeksBack: number): Date {
+  const dayMap: Record<string, number> = {
+    'Sunday': 0,
+    'Monday': 1,
+    'Tuesday': 2,
+    'Wednesday': 3,
+    'Thursday': 4,
+    'Friday': 5,
+    'Saturday': 6
+  };
+  
+  const targetDayIndex = dayMap[targetDayEnglish];
+  if (targetDayIndex === undefined) {
+    throw new Error(`Invalid day name: ${targetDayEnglish}`);
+  }
+
+  // Calculate the base date for the target week (weeksBack = 1 means current week, 2 means 7 days back, etc.)
+  const daysToSubtract = (weeksBack - 1) * 7;
+  let currentBaseDate = subDays(baseDate, daysToSubtract);
+  
+  // Find the most recent occurrence of the target day before/on the currentBaseDate
+  const baseDayIndex = currentBaseDate.getDay();
+  let daysDiff = baseDayIndex - targetDayIndex;
+  if (daysDiff < 0) daysDiff += 7; // Wrap around if target day is later in the week
+  
+  return subDays(currentBaseDate, daysDiff);
+}

@@ -5,12 +5,13 @@ import { Loader2 } from "lucide-react";
 import { VerifierTool } from "@/components/verifier-tool";
 import { Loto3Generator } from "@/components/loto3-generator";
 import { useState } from "react";
-import { redirect } from "next/navigation"; // Import redirect
+import { redirect } from "next/navigation";
+import { HistoricalVerifier } from "@/components/historical-verifier";
 
 export default function VerifierPage() {
   const { isLoading, session } = useAuth();
-  const [loto3Input, setLoto3Input] = useState(''); // State to hold the numbers passed from VerifierTool to Loto3
-  const [verifierInputA, setVerifierInputA] = useState(''); // New state for Verifier's Set A input
+  const [loto3Input, setLoto3Input] = useState('');
+  const [verifierInputA, setVerifierInputA] = useState('');
 
   if (isLoading) {
     return (
@@ -29,14 +30,17 @@ export default function VerifierPage() {
       <div className="w-full max-w-xl space-y-8">
         <h1 className="text-3xl font-bold mb-6">Verifier Tools</h1>
         
-        {/* Verifier Tool now receives and controls its input A state */}
+        {/* New Historical Verifier Section */}
+        <HistoricalVerifier />
+        
+        {/* Existing Verifier Tool */}
         <VerifierTool 
           onMatchFound={setLoto3Input} 
           inputA={verifierInputA}
           setInputA={setVerifierInputA}
         />
         
-        {/* Loto-3 Generator receives the matched numbers and the transfer function */}
+        {/* Existing Loto-3 Generator */}
         <Loto3Generator 
           inputOverride={loto3Input} 
           onTransferToVerifier={setVerifierInputA}
