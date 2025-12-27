@@ -56,6 +56,21 @@ export function getPreviousWeekDates(baseDate: Date, frenchDay1: string, frenchD
   return getDaysForWeek(baseForWeek, frenchDay1, frenchDay2);
 }
 
+// Function to get the date of a specific day of the week, N weeks back.
+// targetDayIndex: 0 (Sunday) to 6 (Saturday)
+export function getSpecificDayDate(baseDate: Date, targetDayIndex: number, weeksBack: number): Date {
+  // weeksBack is 1 (current week) to 7.
+  const daysToSubtract = (weeksBack - 1) * 7;
+  let currentDayIndex = baseDate.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  
+  // Calculate how many days back the target day was in the current week
+  let daysDiff = currentDayIndex - targetDayIndex;
+  if (daysDiff < 0) daysDiff += 7; // If target day is later in the week, wrap around
+
+  const targetDate = subDays(baseDate, daysDiff + daysToSubtract);
+  return targetDate;
+}
+
 // Function to format date in French style
 export function formatDateFrench(date: Date): string {
   return format(date, "dd MMMM yyyy");

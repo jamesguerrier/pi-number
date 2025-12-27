@@ -6,6 +6,7 @@ import { VerifierTool } from "@/components/verifier-tool";
 import { Loto3Generator } from "@/components/loto3-generator";
 import { useState } from "react";
 import { redirect } from "next/navigation"; // Import redirect
+import { HistoricalVerifier } from "@/components/historical-verifier";
 
 export default function VerifierPage() {
   const { isLoading, session } = useAuth();
@@ -28,6 +29,9 @@ export default function VerifierPage() {
     <div className="min-h-[calc(100vh-10rem)] p-4 md:p-8 flex justify-center">
       <div className="w-full max-w-xl space-y-8">
         <h1 className="text-3xl font-bold mb-6">Verifier Tools</h1>
+        
+        {/* NEW: Historical Verifier */}
+        <HistoricalVerifier />
         
         {/* Verifier Tool now receives and controls its input A state */}
         <VerifierTool 
