@@ -31,9 +31,17 @@ const DAYS_OF_WEEK = [
     { name: "Saturday", index: 6 },
 ];
 
+const LOCATIONS = [
+    { name: "New York", tableName: "new_york_data" },
+    { name: "Florida", tableName: "florida_data" },
+    { name: "New Jersey", tableName: "new_jersey_data" },
+    { name: "Georgia", tableName: "georgia_data" },
+];
+
 export function HistoricalVerifier() {
     const [inputNumbers, setInputNumbers] = useState('');
     const [selectedDayIndex, setSelectedDayIndex] = useState<number | undefined>(undefined);
+    const [selectedLocation, setSelectedLocation] = useState<string | undefined>(undefined);
     const [results, setResults] = useState<VerificationHit[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -49,6 +57,11 @@ export function HistoricalVerifier() {
             toast.error("Please select a day of the week.");
             return;
         }
+        
+        if (selectedLocation === undefined) {
+            toast.error("Please select a location.");
+            return;
+        }
 
         setIsLoading(true);
         setResults([]);
@@ -56,14 +69,17 @@ export function HistoricalVerifier() {
         try {
             // Use today's date as the base date for calculation
             const baseDate = new Date();
-            const hits = await performHistoricalVerification(baseDate, selectedDayIndex, numbers);
+            // Pass selectedLocation to the verification function
+            const hits = await performHistoricalVerification(baseDate, selectedDayIndex, numbers, selectedLocation);
             
             setResults(hits);
             
+            const locationName = LOCATIONS.find(l => l.tableName === selectedLocation)?.name || selectedLocation;
+
             if (hits.length > 0) {
-                toast.success(`Found ${hits.length} historical match(es)!`);
+                toast.success(`Found ${hits.length} historical match(es) in ${locationName}!`);
             } else {
-                toast.info("No matches found in the last 7 weeks for the selected day.");
+                toast.info(`No matches found in the last 7 weeks for the selected day in ${locationName}.`);
             }
         } catch (error) {
             console.error("Verification failed:", error);
@@ -74,6 +90,7 @@ export function HistoricalVerifier() {
     };
 
     const selectedDayName = DAYS_OF_WEEK.find(d => d.index === selectedDayIndex)?.name;
+    const selectedLocationName = LOCATIONS.find(l => l.tableName === selectedLocation)?.name;
 
     return (
         <Card className="w-full shadow-lg">
@@ -93,29 +110,52 @@ export function HistoricalVerifier() {
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <h3 className="text-lg font-semibold">Select Day of the Week</h3>
-                    <Select 
-                        onValueChange={(value) => setSelectedDayIndex(Number(value))}
-                        value={selectedDayIndex !== undefined ? String(selectedDayIndex) : undefined}
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select a day" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {DAYS_OF_WEEK.map(day => (
-                                <SelectItem key={day.index} value={String(day.index)}>
-                                    {day.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Location Select */}
+                    <div className="space-y-2">
+                        <h3 className="text-lg font-semibold">Select Location</h3>
+                        <Select 
+                            onValueChange={setSelectedLocation}
+                            value={selectedLocation}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select a location" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {LOCATIONS.map(location => (
+                                    <SelectItem key={location.tableName} value={location.tableName}>
+                                        {location.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    
+                    {/* Day Select */}
+                    <div className="space-y-2">
+                        <h3 className="text-lg font-semibold">Select Day of the Week</h3>
+                        <Select 
+                            onValueChange={(value) => setSelectedDayIndex(Number(value))}
+                            value={selectedDayIndex !== undefined ? String(selectedDayIndex) : undefined}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select a day" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {DAYS_OF_WEEK.map(day => (
+                                    <SelectItem key={day.index} value={String(day.index)}>
+                                        {day.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 <Button 
                     onClick={handleVerify} 
                     className="w-full"
-                    disabled={isLoading || inputNumbers.trim() === '' || selectedDayIndex === undefined}
+                    disabled={isLoading || inputNumbers.trim() === '' || selectedDayIndex === undefined || selectedLocation === undefined}
                 >
                     {isLoading ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -126,7 +166,7 @@ export function HistoricalVerifier() {
 
                 <div className="result pt-4 border-t">
                     <h3 className="text-xl font-bold mb-3">
-                        {selectedDayName ? `Results for ${selectedDayName}` : "Results"}
+                        {selectedLocationName && selectedDayName ? `Results for ${selectedLocationName} on ${selectedDayName}` : "Results"}
                     </h3>
                     
                     {isLoading && (
@@ -169,8 +209,12 @@ export function HistoricalVerifier() {
                         </ScrollArea>
                     )}
                     
-                    {!isLoading && results.length === 0 && inputNumbers.trim() !== '' && selectedDayIndex !== undefined && (
+                    {!isLoading && results.length === 0 && inputNumbers.trim() !== '' && selectedDayIndex !== undefined && selectedLocation !== undefined && (
                         <p className="text-muted-foreground italic text-center py-4">No historical matches found.</p>
+                    )}
+                    
+                    {!isLoading && (inputNumbers.trim() === '' || selectedDayIndex === undefined || selectedLocation === undefined) && (
+                        <p className="text-muted-foreground italic text-center py-4">Please enter numbers, select a location, and select a day to begin verification.</p>
                     )}
                 </div>
             </CardContent>
