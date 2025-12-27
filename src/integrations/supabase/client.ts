@@ -12,7 +12,8 @@ const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "e
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     persistSession: true,
-    autoRefreshToken: true,
+    // Disabling autoRefreshToken to prevent 429 errors due to aggressive refreshing
+    autoRefreshToken: false, 
     detectSessionInUrl: true,
   },
 });
