@@ -86,6 +86,7 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
                 if (!uniqueSetsMap.has(setId)) {
                     uniqueSetsMap.set(setId, { indices: [index], result });
                 } else {
+                    // If the set already exists, just add the current input index to its list
                     uniqueSetsMap.get(setId)!.indices.push(index);
                 }
             }
@@ -132,7 +133,7 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
 
     let currentRawResults: string[] = [];
     let currentDetailedLog: AnalysisLog = [];
-    let currentAnalysisSets: AnalysisSet[] = [];
+    const uniqueAnalysisSetsMap = new Map<string, AnalysisSet>();
 
     if (allInputsFilled) {
         // --- Two-Step Analysis (Day then Moon) ---
@@ -141,24 +142,24 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
         setStep('analyzing_day');
         const dayIndices = [0, 1, 2];
         const daySets = mapInputsToSets(dayIndices);
-        currentAnalysisSets.push(...daySets);
 
         if (daySets.length > 0) {
             const { rawResults, detailedLog } = await runAnalysisStep(daySets);
             currentRawResults.push(...rawResults);
             currentDetailedLog.push(...detailedLog);
+            daySets.forEach(set => uniqueAnalysisSetsMap.set(set.id, set));
         }
 
         // Step 2: Moon Analysis (Indices 3, 4, 5)
         setStep('analyzing_moon');
         const moonIndices = [3, 4, 5];
         const moonSets = mapInputsToSets(moonIndices);
-        currentAnalysisSets.push(...moonSets);
 
         if (moonSets.length > 0) {
             const { rawResults, detailedLog } = await runAnalysisStep(moonSets);
             currentRawResults.push(...rawResults);
             currentDetailedLog.push(...detailedLog);
+            moonSets.forEach(set => uniqueAnalysisSetsMap.set(set.id, set));
         }
 
     } else {
@@ -167,19 +168,19 @@ export function NumberAnalysisForm({ location, tableName }: NumberAnalysisFormPr
         
         const allIndices = [0, 1, 2, 3, 4, 5];
         const allSets = mapInputsToSets(allIndices.filter(i => numbers[i])); // Only map indices with valid input
-        currentAnalysisSets.push(...allSets);
 
         if (allSets.length > 0) {
             const { rawResults, detailedLog } = await runAnalysisStep(allSets);
             currentRawResults.push(...rawResults);
             currentDetailedLog.push(...detailedLog);
+            allSets.forEach(set => uniqueAnalysisSetsMap.set(set.id, set));
         } else {
             alert("No matching data found for entered numbers.");
         }
     }
 
     // Finalize state
-    setAnalysisSets(currentAnalysisSets);
+    setAnalysisSets(Array.from(uniqueAnalysisSetsMap.values()));
     setRawFinalResults(currentRawResults);
     setDetailedLog(currentDetailedLog);
     setStep('results');

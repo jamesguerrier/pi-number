@@ -84,6 +84,7 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
                 if (!uniqueSetsMap.has(setId)) {
                     uniqueSetsMap.set(setId, { indices: [index], result });
                 } else {
+                    // If the set already exists, just add the current input index to its list
                     uniqueSetsMap.get(setId)!.indices.push(index);
                 }
             }
@@ -131,7 +132,7 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
 
     let currentRawResults: string[] = [];
     let currentDetailedLog: AnalysisLog = [];
-    let currentAnalysisSets: AnalysisSet[] = [];
+    const uniqueAnalysisSetsMap = new Map<string, AnalysisSet>();
 
     if (allInputsFilled) {
         // --- Three-Step Analysis (Day, Moon, then Night) ---
@@ -140,36 +141,36 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
         setStep('analyzing_day');
         const dayIndices = [0, 1, 2];
         const daySets = mapInputsToSets(dayIndices);
-        currentAnalysisSets.push(...daySets);
 
         if (daySets.length > 0) {
             const { rawResults, detailedLog } = await runGeorgiaAnalysisStep(daySets);
             currentRawResults.push(...rawResults);
             currentDetailedLog.push(...detailedLog);
+            daySets.forEach(set => uniqueAnalysisSetsMap.set(set.id, set));
         }
 
         // Step 2: Moon Analysis (Indices 3, 4, 5)
         setStep('analyzing_moon');
         const moonIndices = [3, 4, 5];
         const moonSets = mapInputsToSets(moonIndices);
-        currentAnalysisSets.push(...moonSets);
 
         if (moonSets.length > 0) {
             const { rawResults, detailedLog } = await runGeorgiaAnalysisStep(moonSets);
             currentRawResults.push(...rawResults);
             currentDetailedLog.push(...detailedLog);
+            moonSets.forEach(set => uniqueAnalysisSetsMap.set(set.id, set));
         }
         
         // Step 3: Night Analysis (Indices 6, 7, 8)
         setStep('analyzing_night');
         const nightIndices = [6, 7, 8];
         const nightSets = mapInputsToSets(nightIndices);
-        currentAnalysisSets.push(...nightSets);
 
         if (nightSets.length > 0) {
             const { rawResults, detailedLog } = await runGeorgiaAnalysisStep(nightSets);
             currentRawResults.push(...rawResults);
             currentDetailedLog.push(...detailedLog);
+            nightSets.forEach(set => uniqueAnalysisSetsMap.set(set.id, set));
         }
 
     } else {
@@ -178,19 +179,19 @@ export function GeorgiaNumberAnalysisForm({ location, tableName }: GeorgiaNumber
         
         const allIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8];
         const allSets = mapInputsToSets(allIndices.filter(i => numbers[i])); // Only map indices with valid input
-        currentAnalysisSets.push(...allSets);
 
         if (allSets.length > 0) {
             const { rawResults, detailedLog } = await runGeorgiaAnalysisStep(allSets);
             currentRawResults.push(...rawResults);
             currentDetailedLog.push(...detailedLog);
+            allSets.forEach(set => uniqueAnalysisSetsMap.set(set.id, set));
         } else {
             alert("No matching data found for entered numbers.");
         }
     }
 
     // Finalize state
-    setAnalysisSets(currentAnalysisSets);
+    setAnalysisSets(Array.from(uniqueAnalysisSetsMap.values()));
     setRawFinalResults(currentRawResults);
     setDetailedLog(currentDetailedLog);
     setStep('results');
