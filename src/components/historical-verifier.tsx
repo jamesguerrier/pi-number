@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { performHistoricalVerification, VerificationHit } from '@/lib/historicalVerifier';
-import { Loader2, Calendar, MapPin, Info } from 'lucide-react';
+import { Loader2, Calendar, MapPin, Info, CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as DatePicker } from '@/components/ui/calendar';
 
 // Helper function to parse input (copied from VerifierTool)
 function parseInput(value: string): number[] {
@@ -42,6 +44,7 @@ export function HistoricalVerifier() {
     const [inputNumbers, setInputNumbers] = useState('');
     const [selectedDayIndex, setSelectedDayIndex] = useState<number | undefined>(undefined);
     const [selectedLocation, setSelectedLocation] = useState<string | undefined>(undefined);
+    const [baseDate, setBaseDate] = useState<Date | undefined>(new Date()); // New state for base date
     const [results, setResults] = useState<VerificationHit[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -62,14 +65,16 @@ export function HistoricalVerifier() {
             toast.error("Please select a location.");
             return;
         }
+        
+        if (!baseDate) {
+            toast.error("Please select a starting date.");
+            return;
+        }
 
         setIsLoading(true);
         setResults([]);
         
         try {
-            // Use today's date as the base date for calculation
-            const baseDate = new Date();
-            // Pass selectedLocation to the verification function
             const hits = await performHistoricalVerification(baseDate, selectedDayIndex, numbers, selectedLocation);
             
             setResults(hits);
@@ -110,7 +115,34 @@ export function HistoricalVerifier() {
                     />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Date Picker */}
+                    <div className="space-y-2">
+                        <h3 className="text-lg font-semibold">Start Date</h3>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !baseDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {baseDate ? format(baseDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <DatePicker
+                                    mode="single"
+                                    selected={baseDate}
+                                    onSelect={setBaseDate}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    
                     {/* Location Select */}
                     <div className="space-y-2">
                         <h3 className="text-lg font-semibold">Select Location</h3>
@@ -133,7 +165,7 @@ export function HistoricalVerifier() {
                     
                     {/* Day Select */}
                     <div className="space-y-2">
-                        <h3 className="text-lg font-semibold">Select Day of the Week</h3>
+                        <h3 className="text-lg font-semibold">Select Day</h3>
                         <Select 
                             onValueChange={(value) => setSelectedDayIndex(Number(value))}
                             value={selectedDayIndex !== undefined ? String(selectedDayIndex) : undefined}
@@ -155,7 +187,7 @@ export function HistoricalVerifier() {
                 <Button 
                     onClick={handleVerify} 
                     className="w-full"
-                    disabled={isLoading || inputNumbers.trim() === '' || selectedDayIndex === undefined || selectedLocation === undefined}
+                    disabled={isLoading || inputNumbers.trim() === '' || selectedDayIndex === undefined || selectedLocation === undefined || !baseDate}
                 >
                     {isLoading ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -166,7 +198,9 @@ export function HistoricalVerifier() {
 
                 <div className="result pt-4 border-t">
                     <h3 className="text-xl font-bold mb-3">
-                        {selectedLocationName && selectedDayName ? `Results for ${selectedLocationName} on ${selectedDayName}` : "Results"}
+                        {selectedLocationName && selectedDayName && baseDate ? 
+                            `Results for ${selectedLocationName} on ${selectedDayName} (Starting ${format(baseDate, 'MMM dd, yyyy')})` 
+                            : "Results"}
                     </h3>
                     
                     {isLoading && (
@@ -209,12 +243,12 @@ export function HistoricalVerifier() {
                         </ScrollArea>
                     )}
                     
-                    {!isLoading && results.length === 0 && inputNumbers.trim() !== '' && selectedDayIndex !== undefined && selectedLocation !== undefined && (
+                    {!isLoading && results.length === 0 && inputNumbers.trim() !== '' && selectedDayIndex !== undefined && selectedLocation !== undefined && baseDate && (
                         <p className="text-muted-foreground italic text-center py-4">No historical matches found.</p>
                     )}
                     
-                    {!isLoading && (inputNumbers.trim() === '' || selectedDayIndex === undefined || selectedLocation === undefined) && (
-                        <p className="text-muted-foreground italic text-center py-4">Please enter numbers, select a location, and select a day to begin verification.</p>
+                    {!isLoading && (inputNumbers.trim() === '' || selectedDayIndex === undefined || selectedLocation === undefined || !baseDate) && (
+                        <p className="text-muted-foreground italic text-center py-4">Please enter numbers, select a starting date, location, and day to begin verification.</p>
                     )}
                 </div>
             </CardContent>
