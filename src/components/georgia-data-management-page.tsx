@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Database, ArrowLeft } from "lucide-react";
+import { Loader2, Database, ArrowLeft, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { GeorgiaDatabaseRecord } from "@/lib/schemas";
@@ -18,36 +18,45 @@ interface GeorgiaDataManagementPageProps {
   tableName: string;
 }
 
+const INITIAL_LIMIT = 30;
+const LOAD_MORE_STEP = 30;
+
 export function GeorgiaDataManagementPage({ location, tableName }: GeorgiaDataManagementPageProps) {
   const [data, setData] = useState<GeorgiaDatabaseRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [limit, setLimit] = useState(INITIAL_LIMIT);
+  const [hasMore, setHasMore] = useState(true);
   const router = useRouter();
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (currentLimit: number) => {
     setIsLoading(true);
     
-    // Calculate the date 30 days ago
-    const thirtyDaysAgo = format(subDays(new Date(), 30), 'yyyy-MM-dd');
-
     const { data: records, error } = await supabase
       .from(tableName)
       .select('*')
-      .gte('complete_date', thirtyDaysAgo) // Filter for the last 30 days
       .order('complete_date', { ascending: false })
-      .limit(30);
+      .limit(currentLimit);
 
     if (error) {
       toast.error(`Failed to load ${location} data: ${error.message}`);
       setData([]);
+      setHasMore(false);
     } else {
       setData(records as GeorgiaDatabaseRecord[]);
+      // Check if we loaded fewer records than the current limit, indicating no more data
+      setHasMore(records.length === currentLimit);
     }
     setIsLoading(false);
   }, [location, tableName]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    // Fetch data whenever the limit changes (or on initial load)
+    fetchData(limit);
+  }, [limit, fetchData]);
+  
+  const handleLoadMore = () => {
+    setLimit(prevLimit => prevLimit + LOAD_MORE_STEP);
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8">
@@ -75,20 +84,45 @@ export function GeorgiaDataManagementPage({ location, tableName }: GeorgiaDataMa
           {/* Data Entry Form */}
           <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-900">
             <h3 className="text-xl font-semibold mb-4">Add New Record</h3>
-            <GeorgiaDataEntryForm tableName={tableName} onSuccess={fetchData} />
+            <GeorgiaDataEntryForm tableName={tableName} onSuccess={() => fetchData(limit)} />
           </div>
 
           <Separator />
 
           {/* Data Table Display */}
           <div>
-            <h3 className="text-xl font-semibold mb-4">Last 30 Days of Records</h3>
-            {isLoading ? (
+            <h3 className="text-xl font-semibold mb-4">Records ({data.length} shown)</h3>
+            {isLoading && data.length === 0 ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <GeorgiaDataTable data={data} tableName={tableName} onUpdate={fetchData} />
+              <>
+                <GeorgiaDataTable data={data} tableName={tableName} onUpdate={() => fetchData(limit)} />
+                
+                {hasMore && (
+                  <div className="mt-6 text-center">
+                    <Button 
+                      onClick={handleLoadMore} 
+                      disabled={isLoading}
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                      Load More Records ({LOAD_MORE_STEP})
+                    </Button>
+                  </div>
+                )}
+                {!hasMore && data.length > 0 && (
+                    <p className="text-center text-sm text-muted-foreground mt-6">
+                        You have reached the end of the available records.
+                    </p>
+                )}
+              </>
             )}
           </div>
         </CardContent>
