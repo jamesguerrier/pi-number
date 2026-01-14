@@ -5,13 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Loader2, Database } from 'lucide-react';
+import { Loader2, Database, Send } from 'lucide-react'; // Added Send icon
 import { numberData } from '@/lib/data'; // Reusing existing analysis data
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { DatabaseRecord } from '@/lib/schemas';
-import { DateInputSection } from './date-input-section'; // Import DateInputSection
+import { DateInputSection } from './date-input-section';
 import { format } from 'date-fns';
+import { useRouter } from 'next/navigation'; // Added useRouter
 
 // --- Data Structures and Constants ---
 
@@ -72,6 +72,20 @@ export function DayCheckerTool() {
     const [baseDate, setBaseDate] = useState<Date | undefined>(new Date()); // New state for date picker
     // State to track which input index should be highlighted and with which day's style
     const [highlightedInputs, setHighlightedInputs] = useState<Record<number, string | null>>({});
+
+    const router = useRouter(); // Initialize router
+
+    // Memoized set of all unique found numbers from the current results
+    const allFoundNumbersInResults = useMemo(() => {
+        if (!results) return new Set<number>();
+        const collected = new Set<number>();
+        results.forEach(dayResult => {
+            dayResult.matches.forEach(match => {
+                match.foundNumbers.forEach(num => collected.add(num));
+            });
+        });
+        return collected;
+    }, [results]);
 
     // Helper function to fetch data and populate inputs
     const fetchAndPopulateInputs = async (tableName: string) => {
@@ -258,6 +272,20 @@ export function DayCheckerTool() {
         }, 1000);
     };
     
+    // Function to handle transferring numbers to the Verifier page
+    const handleTransferToVerifier = () => {
+        if (allFoundNumbersInResults.size === 0) {
+            toast.info("No numbers found to transfer.");
+            return;
+        }
+
+        const sortedUniqueNumbers = Array.from(allFoundNumbersInResults).sort((a, b) => a - b);
+        const numberString = sortedUniqueNumbers.map(n => String(n).padStart(2, '0')).join(',');
+
+        router.push(`/verifier?setA=${numberString}`);
+        toast.success(`Transferred ${allFoundNumbersInResults.size} number(s) to Verifier Set A (Green).`);
+    };
+
     // Helper to render a group of 3 inputs (MIDI or SOIR)
     const renderInputGroup = (startIndex: number) => (
         <div className="flex gap-4 flex-wrap justify-center">
@@ -449,6 +477,18 @@ export function DayCheckerTool() {
                                     <div className="match-location text-sm text-muted-foreground">Total numbers matched: {totalSummary.totalNumbersMatched}</div>
                                     <div className="match-location text-sm text-muted-foreground">{totalSummary.day1.name}: {totalSummary.day1.totalArraysFound} arrays ({totalSummary.day1.totalNumbersMatched} numbers)</div>
                                     <div className="match-location text-sm text-muted-foreground">{totalSummary.day2.name}: {totalSummary.day2.totalArraysFound} arrays ({totalSummary.day2.totalNumbersMatched} numbers)</div>
+                                </div>
+
+                                {/* New Transfer Button */}
+                                <div className="mt-6">
+                                    <Button
+                                        onClick={handleTransferToVerifier}
+                                        className="w-full gap-2"
+                                        disabled={allFoundNumbersInResults.size === 0}
+                                    >
+                                        <Send className="h-4 w-4" />
+                                        Transfer {allFoundNumbersInResults.size} Number(s) to Verifier Set A
+                                    </Button>
                                 </div>
                             </div>
                         ) : (
