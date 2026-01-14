@@ -16,6 +16,7 @@ const navItems = [
     { href: "/new-jersey", label: "New Jersey" },
     { href: "/georgia", label: "Georgia" },
     { href: "/verifier", label: "Verifier" },
+    { href: "/day-checker", label: "Day Checker" }, // Added new link
 ]
 
 interface MobileLinkProps extends LinkProps {
