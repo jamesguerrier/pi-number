@@ -1,38 +1,55 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
+import { numberData } from '@/lib/data'; // Reusing existing analysis data
 
-// Define the specific highlight styles based on the provided CSS
-const DAY_HIGHLIGHT_STYLES: Record<string, React.CSSProperties> = {
-    lundi: { backgroundColor: '#90ee90', borderColor: '#228b22', color: '#006400', fontWeight: 'bold' },
-    jeudi: { backgroundColor: '#add8e6', borderColor: '#1e90ff', color: '#00008b', fontWeight: 'bold' },
-    mardi: { backgroundColor: '#ffb6c1', borderColor: '#ff69b4', color: '#8b0000', fontWeight: 'bold' },
-    vendredi: { backgroundColor: '#ffd700', borderColor: '#ff8c00', color: '#8b4513', fontWeight: 'bold' },
-    mercredi: { backgroundColor: '#d8bfd8', borderColor: '#9400d3', color: '#4b0082', fontWeight: 'bold' },
-    samedi: { backgroundColor: '#ffa07a', borderColor: '#ff4500', color: '#8b0000', fontWeight: 'bold' },
-    dimanche: { backgroundColor: '#f0e68c', borderColor: '#daa520', color: '#8b4513', fontWeight: 'bold' },
+// --- Data Structures and Constants ---
+
+// Day color map for display and styling
+const DAY_COLOR_MAP = {
+    'lundi': { name: 'Lundi', indicatorColor: '#90ee90', style: { backgroundColor: '#90ee90', borderColor: '#228b22', color: '#006400', fontWeight: 'bold' } },
+    'jeudi': { name: 'Jeudi', indicatorColor: '#add8e6', style: { backgroundColor: '#add8e6', borderColor: '#1e90ff', color: '#00008b', fontWeight: 'bold' } },
+    'mardi': { name: 'Mardi', indicatorColor: '#ffb6c1', style: { backgroundColor: '#ffb6c1', borderColor: '#ff69b4', color: '#8b0000', fontWeight: 'bold' } },
+    'vendredi': { name: 'Vendredi', indicatorColor: '#ffd700', style: { backgroundColor: '#ffd700', borderColor: '#ff8c00', color: '#8b4513', fontWeight: 'bold' } },
+    'mercredi': { name: 'Mercredi', indicatorColor: '#d8bfd8', style: { backgroundColor: '#d8bfd8', borderColor: '#9400d3', color: '#4b0082', fontWeight: 'bold' } },
+    'samedi': { name: 'Samedi', indicatorColor: '#ffa07a', style: { backgroundColor: '#ffa07a', borderColor: '#ff4500', color: '#8b0000', fontWeight: 'bold' } },
+    'dimanche': { name: 'Dimanche', indicatorColor: '#f0e68c', style: { backgroundColor: '#f0e68c', borderColor: '#daa520', color: '#8b4513', fontWeight: 'bold' } },
 };
 
-// Placeholder for the result structure
-interface MatchResult {
-    day: string;
-    matches: {
-        numbers: number[];
-        location: string;
-    }[];
+type DayKey = keyof typeof DAY_COLOR_MAP;
+
+interface MatchDetail {
+    array: number[];
+    foundNumbers: number[];
+    location: string;
+    matchCount: number;
+    totalInArray: number;
+    percentage: number;
 }
+
+interface DayMatchResult {
+    day: string; // French day name key
+    name: string; // English day name
+    indicatorColor: string;
+    matches: MatchDetail[];
+    totalArraysFound: number;
+    totalNumbersMatched: number;
+}
+
+// --- Component ---
 
 export function DayCheckerTool() {
     // State for 18 inputs (3 rows * 2 groups * 3 inputs)
     const [inputs, setInputs] = useState<string[]>(Array(18).fill(""));
-    const [results, setResults] = useState<MatchResult[]>([]);
+    const [results, setResults] = useState<DayMatchResult[] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [highlightDay, setHighlightDay] = useState<string | null>(null);
+    // State to track which input index should be highlighted and with which day's style
+    const [highlightedInputs, setHighlightedInputs] = useState<Record<number, string | null>>({});
 
     const handleInputChange = (index: number, value: string) => {
         // Only allow numbers and limit to 2 digits
@@ -40,59 +57,124 @@ export function DayCheckerTool() {
         const newInputs = [...inputs];
         newInputs[index] = numericValue;
         setInputs(newInputs);
+        
+        // Clear highlight for this specific input when value changes
+        setHighlightedInputs(prev => {
+            const newState = { ...prev };
+            newState[index] = null;
+            return newState;
+        });
     };
 
     const handleClearAll = () => {
         setInputs(Array(18).fill(""));
-        setResults([]);
-        setHighlightDay(null);
+        setResults(null);
+        setHighlightedInputs({});
     };
 
     const handleSearchRange = (day1: string, day2: string) => {
-        // Placeholder logic for search
-        const validInputs = inputs.filter(n => n.length > 0).map(Number);
-        
-        if (validInputs.length === 0) {
-            alert("Please enter at least one number.");
+        const inputValuesWithIndices: { value: number, index: number }[] = inputs
+            .map((val, index) => ({ value: val.trim() === '' ? null : parseInt(val), index }))
+            .filter((item): item is { value: number, index: number } => item.value !== null && !isNaN(item.value));
+
+        if (inputValuesWithIndices.length === 0) {
+            alert("Please enter at least one valid number (0-99).");
             return;
         }
 
         setIsLoading(true);
-        setResults([]);
-        setHighlightDay(day1); // Highlight the first day in the pair
+        setResults(null);
+        
+        // Reset highlights before search
+        const newHighlights: Record<number, string | null> = {};
+        const inputSet = new Set(inputValuesWithIndices.map(i => i.value));
 
-        // Simulate analysis based on the input numbers and the selected day range
-        setTimeout(() => {
-            // Placeholder results structure
-            const mockResults: MatchResult[] = [
-                {
-                    day: day1,
-                    matches: [
-                        { numbers: [12, 34], location: "New York" },
-                        { numbers: [56], location: "Florida" },
-                    ]
-                },
-                {
-                    day: day2,
-                    matches: [
-                        { numbers: [78, 90, 11], location: "New Jersey" },
-                    ]
+        const allMatches: Record<string, MatchDetail[]> = {
+            [day1]: [],
+            [day2]: [],
+        };
+
+        const searchIndividualNumbers = (dayName: string) => {
+            const dayKey = dayName as keyof typeof numberData;
+
+            for (const sectionKey in numberData) {
+                const section = numberData[sectionKey as keyof typeof numberData];
+
+                for (const subsectionKey in section) {
+                    const subsection = section[subsectionKey as keyof typeof section];
+
+                    if (subsection[dayKey as keyof typeof subsection]) {
+                        const dayArray = subsection[dayKey as keyof typeof subsection] as number[];
+                        const foundInArray: number[] = [];
+
+                        // Check each input value against the dayArray
+                        inputValuesWithIndices.forEach(inputItem => {
+                            if (dayArray.includes(inputItem.value)) {
+                                foundInArray.push(inputItem.value);
+                                // Highlight all inputs that match this day's array
+                                newHighlights[inputItem.index] = dayName;
+                            }
+                        });
+
+                        // Store match details
+                        if (foundInArray.length > 0) {
+                            const uniqueFoundNumbers = Array.from(new Set(foundInArray));
+                            const matchCount = uniqueFoundNumbers.length;
+                            const totalInArray = dayArray.length;
+                            const percentage = Math.round((matchCount / totalInArray) * 100);
+
+                            allMatches[dayName].push({
+                                array: dayArray,
+                                foundNumbers: uniqueFoundNumbers,
+                                location: `${sectionKey}.${subsectionKey}`,
+                                matchCount,
+                                totalInArray,
+                                percentage,
+                            });
+                        }
+                    }
                 }
-            ];
+            }
+            // Sort matches by match count descending
+            allMatches[dayName].sort((a, b) => b.matchCount - a.matchCount);
+        };
+
+        searchIndividualNumbers(day1);
+        searchIndividualNumbers(day2);
+
+        // Format results for state
+        const finalResults: DayMatchResult[] = [day1, day2].map(dayKey => {
+            // FIX 1: Cast dayKey to DayKey type
+            const dayInfo = DAY_COLOR_MAP[dayKey as DayKey];
+            const matches = allMatches[dayKey];
             
-            setResults(mockResults);
+            return {
+                day: dayKey,
+                name: dayInfo.name,
+                indicatorColor: dayInfo.indicatorColor,
+                matches: matches,
+                totalArraysFound: matches.length,
+                totalNumbersMatched: matches.reduce((sum, match) => sum + match.matchCount, 0),
+            };
+        });
+
+        // Update state after a short delay to show loading
+        setTimeout(() => {
+            setHighlightedInputs(newHighlights);
+            setResults(finalResults);
             setIsLoading(false);
-        }, 1500);
+        }, 1000);
     };
     
     // Helper to render a group of 3 inputs (MIDI or SOIR)
     const renderInputGroup = (startIndex: number) => (
         <div className="flex gap-4 flex-wrap justify-center">
-            {[0, 1, 2].map(offset => { // Changed iteration from 4 to 3
+            {[0, 1, 2].map(offset => {
                 const index = startIndex + offset;
                 
-                // Apply highlight style if a search button has been clicked
-                const style = highlightDay ? DAY_HIGHLIGHT_STYLES[highlightDay] : {};
+                const dayKey = highlightedInputs[index];
+                // FIX 2: Cast dayKey to DayKey type before indexing DAY_COLOR_MAP
+                const style = dayKey ? DAY_COLOR_MAP[dayKey as DayKey].style : {};
 
                 return (
                     <Input
@@ -108,7 +190,7 @@ export function DayCheckerTool() {
                             "focus:border-blue-500 focus:shadow-lg focus:scale-105",
                             "bg-input border-border text-foreground" // Default Shadcn/Tailwind classes
                         )}
-                        style={highlightDay ? style : {}}
+                        style={style}
                         maxLength={2}
                     />
                 );
@@ -142,6 +224,18 @@ export function DayCheckerTool() {
         background: 'linear-gradient(135deg, #f56565 0%, #ed64a6 100%)',
         boxShadow: '0 4px 15px rgba(245, 101, 101, 0.3)',
     };
+
+    const totalSummary = useMemo(() => {
+        if (!results) return null;
+        
+        const day1 = results[0];
+        const day2 = results[1];
+        
+        const totalArraysFound = day1.totalArraysFound + day2.totalArraysFound;
+        const totalNumbersMatched = day1.totalNumbersMatched + day2.totalNumbersMatched;
+
+        return { totalArraysFound, totalNumbersMatched, day1, day2 };
+    }, [results]);
 
     return (
         <Card className="w-full shadow-xl">
@@ -210,31 +304,42 @@ export function DayCheckerTool() {
                     </div>
                     
                     {/* Result Area */}
-                    <div className="p-5 min-h-32 border-2 rounded-xl bg-muted/50 border-border shadow-inner">
+                    <div id="result" className="p-5 min-h-32 border-2 rounded-xl bg-muted/50 border-border shadow-inner">
                         {isLoading ? (
                             <div className="flex justify-center items-center h-full">
                                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
                             </div>
-                        ) : results.length > 0 ? (
+                        ) : results && totalSummary ? (
                             <div className="space-y-4">
                                 {results.map((dayResult, index) => (
                                     <div key={index} className="day-section p-4 border-l-4 border-green-500 rounded-lg shadow-sm bg-card dark:bg-gray-900">
-                                        <h4 className="day-title font-bold text-lg text-foreground mb-2 capitalize">
-                                            <span className="inline-block w-5 h-5 rounded mr-2" style={{ backgroundColor: DAY_HIGHLIGHT_STYLES[dayResult.day.toLowerCase()]?.backgroundColor }}></span>
-                                            {dayResult.day} Matches:
+                                        <h4 className="day-title font-bold text-lg text-foreground mb-2 capitalize flex items-center">
+                                            <span className="day-color-indicator w-5 h-5 rounded mr-2" style={{ backgroundColor: dayResult.indicatorColor }}></span>
+                                            {dayResult.name} Matches ({dayResult.totalArraysFound} arrays found):
                                         </h4>
-                                        {dayResult.matches.map((match, matchIndex) => (
-                                            <div key={matchIndex} className="match-info p-3 rounded-lg mt-2 border-l-4 border-blue-500 bg-muted/50">
-                                                <p className="match-numbers font-bold text-foreground">
-                                                    Numbers: {match.numbers.map(n => String(n).padStart(2, '0')).join(', ')}
-                                                </p>
-                                                <p className="match-location text-sm text-muted-foreground">
-                                                    Location: {match.location}
-                                                </p>
-                                            </div>
-                                        ))}
+                                        {dayResult.matches.length > 0 ? (
+                                            dayResult.matches.map((match, matchIndex) => (
+                                                <div key={matchIndex} className="match-info p-3 rounded-lg mt-2 border-l-4 border-blue-500 bg-muted/50">
+                                                    <div className="match-numbers font-bold text-foreground">Array: [{match.array.map(n => String(n).padStart(2, '0')).join(', ')}]</div>
+                                                    <div className="match-numbers">Found {match.matchCount}/{match.totalInArray} numbers: [{match.foundNumbers.map(n => String(n).padStart(2, '0')).join(', ')}]</div>
+                                                    <div className="match-location text-sm text-muted-foreground">Location: {match.location}</div>
+                                                    <div className="match-location text-sm text-muted-foreground">Match: {match.percentage}% ({match.matchCount} of {match.totalInArray})</div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="no-match text-muted-foreground italic">No matches found for {dayResult.name}</div>
+                                        )}
                                     </div>
                                 ))}
+                                
+                                {/* Summary */}
+                                <div className="match-info p-3 rounded-lg mt-4 border-l-4 border-purple-500 bg-muted/50">
+                                    <div className="match-numbers font-bold text-foreground">Summary:</div>
+                                    <div className="match-location text-sm text-muted-foreground">Total arrays with matches: {totalSummary.totalArraysFound}</div>
+                                    <div className="match-location text-sm text-muted-foreground">Total numbers matched: {totalSummary.totalNumbersMatched}</div>
+                                    <div className="match-location text-sm text-muted-foreground">{totalSummary.day1.name}: {totalSummary.day1.totalArraysFound} arrays ({totalSummary.day1.totalNumbersMatched} numbers)</div>
+                                    <div className="match-location text-sm text-muted-foreground">{totalSummary.day2.name}: {totalSummary.day2.totalArraysFound} arrays ({totalSummary.day2.totalNumbersMatched} numbers)</div>
+                                </div>
                             </div>
                         ) : (
                             <p className="text-muted-foreground italic">Click a button to search for matches.</p>
