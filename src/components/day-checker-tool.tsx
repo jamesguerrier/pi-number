@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Database } from 'lucide-react';
 import { numberData } from '@/lib/data'; // Reusing existing analysis data
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { DatabaseRecord } from '@/lib/schemas';
 
 // --- Data Structures and Constants ---
 
@@ -41,6 +44,12 @@ interface DayMatchResult {
     totalNumbersMatched: number;
 }
 
+const LOCATION_MAP = [
+    { name: "New York", tableName: "new_york_data" },
+    { name: "Florida", tableName: "florida_data" },
+    { name: "New Jersey", tableName: "new_jersey_data" },
+];
+
 // --- Component ---
 
 export function DayCheckerTool() {
@@ -50,6 +59,78 @@ export function DayCheckerTool() {
     const [isLoading, setIsLoading] = useState(false);
     // State to track which input index should be highlighted and with which day's style
     const [highlightedInputs, setHighlightedInputs] = useState<Record<number, string | null>>({});
+
+    // Helper function to fetch data and populate inputs
+    const fetchAndPopulateInputs = async (tableName: string) => {
+        setIsLoading(true);
+        setResults(null);
+        setHighlightedInputs({});
+        
+        try {
+            // Fetch the last 3 records, ordered by complete_date
+            const { data: records, error } = await supabase
+                .from(tableName)
+                .select('first_am_day, second_am_day, third_am_day, first_pm_moon, second_pm_moon, third_pm_moon')
+                .order('complete_date', { ascending: false })
+                .limit(3);
+
+            if (error) {
+                toast.error(`Failed to load data for ${tableName}: ${error.message}`);
+                return;
+            }
+
+            if (!records || records.length === 0) {
+                toast.info(`No recent data found for ${tableName}.`);
+                setInputs(Array(18).fill(""));
+                return;
+            }
+            
+            // Define a minimal type for the selected fields, explicitly allowing null
+            type MinimalRecord = {
+                first_am_day: number | null;
+                second_am_day: number | null;
+                third_am_day: number | null;
+                first_pm_moon: number | null;
+                second_pm_moon: number | null;
+                third_pm_moon: number | null;
+            };
+            
+            const paddedRecords: MinimalRecord[] = records.slice(0, 3) as MinimalRecord[];
+            while (paddedRecords.length < 3) {
+                paddedRecords.push({
+                    first_am_day: null, second_am_day: null, third_am_day: null,
+                    first_pm_moon: null, second_pm_moon: null, third_pm_moon: null,
+                });
+            }
+
+            const newInputs: string[] = [];
+            
+            // Map the 3 records to the 18 inputs (6 fields per record * 3 records)
+            // Record 1 (Most Recent) -> Inputs 0-5 (Row 0)
+            // Record 2 -> Inputs 6-11 (Row 1)
+            // Record 3 (Least Recent) -> Inputs 12-17 (Row 2)
+            paddedRecords.forEach(record => {
+                const fields = [
+                    record.first_am_day, record.second_am_day, record.third_am_day,
+                    record.first_pm_moon, record.second_pm_moon, record.third_pm_moon,
+                ];
+                
+                fields.forEach(field => {
+                    // Convert number to 2-digit string, or empty string if null/undefined
+                    newInputs.push(field !== null && field !== undefined ? String(field).padStart(2, '0') : "");
+                });
+            });
+            
+            setInputs(newInputs);
+            toast.success(`Loaded last ${records.length} recent record(s) from ${tableName}.`);
+
+        } catch (e) {
+            console.error("Error fetching data:", e);
+            toast.error("An unexpected error occurred while fetching data.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleInputChange = (index: number, value: string) => {
         // Only allow numbers and limit to 2 digits
@@ -243,6 +324,22 @@ export function DayCheckerTool() {
             
             <CardContent className="space-y-8">
                 
+                {/* Location Load Buttons */}
+                <div className="flex flex-wrap gap-3 justify-center p-4 border rounded-lg bg-gray-50 dark:bg-gray-900">
+                    {LOCATION_MAP.map((location) => (
+                        <Button
+                            key={location.tableName}
+                            onClick={() => fetchAndPopulateInputs(location.tableName)}
+                            disabled={isLoading}
+                            variant="outline"
+                            className="gap-2"
+                        >
+                            <Database className="h-4 w-4" />
+                            Load {location.name} Data
+                        </Button>
+                    ))}
+                </div>
+
                 {/* Header Groups */}
                 <div className="flex justify-around p-3 rounded-xl bg-muted dark:bg-gray-800 shadow-inner">
                     <h2 className="text-xl font-bold text-foreground">MIDI</h2>
