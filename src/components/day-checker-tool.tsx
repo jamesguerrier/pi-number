@@ -28,8 +28,8 @@ interface MatchResult {
 }
 
 export function DayCheckerTool() {
-    // State for 24 inputs (3 rows * 2 groups * 4 inputs)
-    const [inputs, setInputs] = useState<string[]>(Array(24).fill(""));
+    // State for 18 inputs (3 rows * 2 groups * 3 inputs)
+    const [inputs, setInputs] = useState<string[]>(Array(18).fill(""));
     const [results, setResults] = useState<MatchResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [highlightDay, setHighlightDay] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export function DayCheckerTool() {
     };
 
     const handleClearAll = () => {
-        setInputs(Array(24).fill(""));
+        setInputs(Array(18).fill(""));
         setResults([]);
         setHighlightDay(null);
     };
@@ -85,10 +85,10 @@ export function DayCheckerTool() {
         }, 1500);
     };
     
-    // Helper to render a group of 4 inputs
+    // Helper to render a group of 3 inputs (MIDI or SOIR)
     const renderInputGroup = (startIndex: number) => (
         <div className="flex gap-4 flex-wrap justify-center">
-            {[0, 1, 2, 3].map(offset => {
+            {[0, 1, 2].map(offset => { // Changed iteration from 4 to 3
                 const index = startIndex + offset;
                 
                 // Apply highlight style if a search button has been clicked
@@ -118,8 +118,9 @@ export function DayCheckerTool() {
 
     // Helper to render a row (MIDI group + SOIR group)
     const renderRow = (rowIndex: number) => {
-        const midiStartIndex = rowIndex * 8;
-        const soirStartIndex = rowIndex * 8 + 4;
+        const inputsPerRow = 6; // 3 MIDI + 3 SOIR
+        const midiStartIndex = rowIndex * inputsPerRow;
+        const soirStartIndex = rowIndex * inputsPerRow + 3; // Start SOIR after 3 MIDI inputs
         
         return (
             <div className="flex flex-col md:flex-row justify-center gap-5 md:gap-10 mb-4">
