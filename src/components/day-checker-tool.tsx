@@ -10,6 +10,8 @@ import { numberData } from '@/lib/data'; // Reusing existing analysis data
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { DatabaseRecord } from '@/lib/schemas';
+import { DateInputSection } from './date-input-section'; // Import DateInputSection
+import { format } from 'date-fns';
 
 // --- Data Structures and Constants ---
 
@@ -50,6 +52,16 @@ const LOCATION_MAP = [
     { name: "New Jersey", tableName: "new_jersey_data" },
 ];
 
+// Define a minimal type for the selected fields, explicitly allowing null
+type MinimalRecord = {
+    first_am_day: number | null;
+    second_am_day: number | null;
+    third_am_day: number | null;
+    first_pm_moon: number | null;
+    second_pm_moon: number | null;
+    third_pm_moon: number | null;
+};
+
 // --- Component ---
 
 export function DayCheckerTool() {
@@ -57,20 +69,30 @@ export function DayCheckerTool() {
     const [inputs, setInputs] = useState<string[]>(Array(18).fill(""));
     const [results, setResults] = useState<DayMatchResult[] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [baseDate, setBaseDate] = useState<Date | undefined>(new Date()); // New state for date picker
     // State to track which input index should be highlighted and with which day's style
     const [highlightedInputs, setHighlightedInputs] = useState<Record<number, string | null>>({});
 
     // Helper function to fetch data and populate inputs
     const fetchAndPopulateInputs = async (tableName: string) => {
+        if (!baseDate) {
+            toast.error("Please select a date first.");
+            return;
+        }
+        
         setIsLoading(true);
         setResults(null);
         setHighlightedInputs({});
         
+        // Format the base date to 'yyyy-MM-dd' for Supabase filtering
+        const dateString = format(baseDate, 'yyyy-MM-dd');
+
         try {
-            // Fetch the last 3 records, ordered by complete_date
+            // Fetch the last 3 records, ordered by complete_date, up to and including the selected date
             const { data: records, error } = await supabase
                 .from(tableName)
                 .select('first_am_day, second_am_day, third_am_day, first_pm_moon, second_pm_moon, third_pm_moon')
+                .lte('complete_date', dateString) // Filter: Less than or equal to the selected date
                 .order('complete_date', { ascending: false })
                 .limit(3);
 
@@ -80,20 +102,10 @@ export function DayCheckerTool() {
             }
 
             if (!records || records.length === 0) {
-                toast.info(`No recent data found for ${tableName}.`);
+                toast.info(`No recent data found for ${tableName} on or before ${dateString}.`);
                 setInputs(Array(18).fill(""));
                 return;
             }
-            
-            // Define a minimal type for the selected fields, explicitly allowing null
-            type MinimalRecord = {
-                first_am_day: number | null;
-                second_am_day: number | null;
-                third_am_day: number | null;
-                first_pm_moon: number | null;
-                second_pm_moon: number | null;
-                third_pm_moon: number | null;
-            };
             
             const paddedRecords: MinimalRecord[] = records.slice(0, 3) as MinimalRecord[];
             while (paddedRecords.length < 3) {
@@ -122,7 +134,7 @@ export function DayCheckerTool() {
             });
             
             setInputs(newInputs);
-            toast.success(`Loaded last ${records.length} recent record(s) from ${tableName}.`);
+            toast.success(`Loaded last ${records.length} record(s) on or before ${dateString} from ${tableName}.`);
 
         } catch (e) {
             console.error("Error fetching data:", e);
@@ -324,13 +336,16 @@ export function DayCheckerTool() {
             
             <CardContent className="space-y-8">
                 
+                {/* Date Input Section */}
+                <DateInputSection date={baseDate} setDate={setBaseDate} />
+
                 {/* Location Load Buttons */}
                 <div className="flex flex-wrap gap-3 justify-center p-4 border rounded-lg bg-gray-50 dark:bg-gray-900">
                     {LOCATION_MAP.map((location) => (
                         <Button
                             key={location.tableName}
                             onClick={() => fetchAndPopulateInputs(location.tableName)}
-                            disabled={isLoading}
+                            disabled={isLoading || !baseDate}
                             variant="outline"
                             className="gap-2"
                         >
