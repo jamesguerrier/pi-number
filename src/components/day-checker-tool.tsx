@@ -10,15 +10,15 @@ import { numberData } from '@/lib/data'; // Reusing existing analysis data
 
 // --- Data Structures and Constants ---
 
-// Day color map for display and styling
+// Day color map for display and styling (using French keys for logic, but English names for display)
 const DAY_COLOR_MAP = {
-    'lundi': { name: 'Lundi', indicatorColor: '#90ee90', style: { backgroundColor: '#90ee90', borderColor: '#228b22', color: '#006400', fontWeight: 'bold' } },
-    'jeudi': { name: 'Jeudi', indicatorColor: '#add8e6', style: { backgroundColor: '#add8e6', borderColor: '#1e90ff', color: '#00008b', fontWeight: 'bold' } },
-    'mardi': { name: 'Mardi', indicatorColor: '#ffb6c1', style: { backgroundColor: '#ffb6c1', borderColor: '#ff69b4', color: '#8b0000', fontWeight: 'bold' } },
-    'vendredi': { name: 'Vendredi', indicatorColor: '#ffd700', style: { backgroundColor: '#ffd700', borderColor: '#ff8c00', color: '#8b4513', fontWeight: 'bold' } },
-    'mercredi': { name: 'Mercredi', indicatorColor: '#d8bfd8', style: { backgroundColor: '#d8bfd8', borderColor: '#9400d3', color: '#4b0082', fontWeight: 'bold' } },
-    'samedi': { name: 'Samedi', indicatorColor: '#ffa07a', style: { backgroundColor: '#ffa07a', borderColor: '#ff4500', color: '#8b0000', fontWeight: 'bold' } },
-    'dimanche': { name: 'Dimanche', indicatorColor: '#f0e68c', style: { backgroundColor: '#f0e68c', borderColor: '#daa520', color: '#8b4513', fontWeight: 'bold' } },
+    'lundi': { name: 'Monday', indicatorColor: '#90ee90', style: { backgroundColor: '#90ee90', borderColor: '#228b22', color: '#006400', fontWeight: 'bold' } },
+    'jeudi': { name: 'Thursday', indicatorColor: '#add8e6', style: { backgroundColor: '#add8e6', borderColor: '#1e90ff', color: '#00008b', fontWeight: 'bold' } },
+    'mardi': { name: 'Tuesday', indicatorColor: '#ffb6c1', style: { backgroundColor: '#ffb6c1', borderColor: '#ff69b4', color: '#8b0000', fontWeight: 'bold' } },
+    'vendredi': { name: 'Friday', indicatorColor: '#ffd700', style: { backgroundColor: '#ffd700', borderColor: '#ff8c00', color: '#8b4513', fontWeight: 'bold' } },
+    'mercredi': { name: 'Wednesday', indicatorColor: '#d8bfd8', style: { backgroundColor: '#d8bfd8', borderColor: '#9400d3', color: '#4b0082', fontWeight: 'bold' } },
+    'samedi': { name: 'Saturday', indicatorColor: '#ffa07a', style: { backgroundColor: '#ffa07a', borderColor: '#ff4500', color: '#8b0000', fontWeight: 'bold' } },
+    'dimanche': { name: 'Sunday', indicatorColor: '#f0e68c', style: { backgroundColor: '#f0e68c', borderColor: '#daa520', color: '#8b4513', fontWeight: 'bold' } },
 };
 
 type DayKey = keyof typeof DAY_COLOR_MAP;
@@ -144,7 +144,6 @@ export function DayCheckerTool() {
 
         // Format results for state
         const finalResults: DayMatchResult[] = [day1, day2].map(dayKey => {
-            // FIX 1: Cast dayKey to DayKey type
             const dayInfo = DAY_COLOR_MAP[dayKey as DayKey];
             const matches = allMatches[dayKey];
             
@@ -173,7 +172,6 @@ export function DayCheckerTool() {
                 const index = startIndex + offset;
                 
                 const dayKey = highlightedInputs[index];
-                // FIX 2: Cast dayKey to DayKey type before indexing DAY_COLOR_MAP
                 const style = dayKey ? DAY_COLOR_MAP[dayKey as DayKey].style : {};
 
                 return (
@@ -267,7 +265,7 @@ export function DayCheckerTool() {
                             style={primaryButtonStyles}
                             disabled={isLoading}
                         >
-                            Lundi and Jeudi
+                            Monday and Thursday
                         </Button>
                         <Button 
                             onClick={() => handleSearchRange('mardi', 'vendredi')}
@@ -275,7 +273,7 @@ export function DayCheckerTool() {
                             style={primaryButtonStyles}
                             disabled={isLoading}
                         >
-                            Mardi - Vendredi
+                            Tuesday - Friday
                         </Button>
                         <Button 
                             onClick={() => handleSearchRange('mercredi', 'samedi')}
@@ -283,7 +281,7 @@ export function DayCheckerTool() {
                             style={primaryButtonStyles}
                             disabled={isLoading}
                         >
-                            Mercredi and Samedi
+                            Wednesday and Saturday
                         </Button>
                         <Button 
                             onClick={() => handleSearchRange('dimanche', 'lundi')}
@@ -291,7 +289,7 @@ export function DayCheckerTool() {
                             style={primaryButtonStyles}
                             disabled={isLoading}
                         >
-                            Dimanche and Lundi
+                            Sunday and Monday
                         </Button>
                         <Button 
                             onClick={handleClearAll}
