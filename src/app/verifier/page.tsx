@@ -39,7 +39,6 @@ export default function VerifierPage() {
         {/* Loto-3 Generator receives the matched numbers and the transfer function */}
         <Loto3Generator 
           inputOverride={loto3Input} 
-          onTransferToVerifier={setVerifierInputA}
         />
       </div>
     </div>

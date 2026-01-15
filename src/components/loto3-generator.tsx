@@ -55,17 +55,12 @@ function parseInput(value: string): string[] {
 
 interface Loto3GeneratorProps {
     inputOverride: string;
-    onTransferToVerifier: (numbers: string) => void;
 }
 
-export function Loto3Generator({ inputOverride, onTransferToVerifier }: Loto3GeneratorProps) {
+export function Loto3Generator({ inputOverride }: Loto3GeneratorProps) {
     const [input, setInput] = useState(inputOverride);
     const [results, setResults] = useState<GeneratedNumber[]>([]);
     
-    // New state for Paired Numbers feature
-    const [pairedInput, setPairedInput] = useState('');
-    const [pairedResults, setPairedResults] = useState<string>('');
-
     // Sync internal state with external override
     useEffect(() => {
         if (inputOverride !== input) {
@@ -111,69 +106,6 @@ export function Loto3Generator({ inputOverride, onTransferToVerifier }: Loto3Gen
         setResults(generatedResults);
     };
     
-    // New function for Paired Numbers check
-    const checkPairedNumbers = () => {
-        const rawInput = pairedInput.trim();
-        const inputNum = Number(rawInput);
-        
-        if (rawInput.length === 0 || isNaN(inputNum) || inputNum < 0 || inputNum > 99) {
-            setPairedResults('Please enter a valid 2-digit number (0-99).');
-            onTransferToVerifier(''); // Clear verifier input if invalid
-            return;
-        }
-
-        const targetNumbers = new Set<number>();
-        targetNumbers.add(inputNum);
-        
-        // Add the reverse number if it's different
-        const reversedNum = reverseNumber(inputNum);
-        if (reversedNum !== inputNum) {
-            targetNumbers.add(reversedNum);
-        }
-
-        const collectedNumbers = new Set<number>();
-
-        VERIFIER_DATA.forEach(row => {
-            let foundMatch = false;
-            
-            // Check if any target number is in the current row
-            for (const target of targetNumbers) {
-                if (row.includes(target)) {
-                    foundMatch = true;
-                    break;
-                }
-            }
-
-            if (foundMatch) {
-                // If a match is found, add all numbers from that row to the collection
-                row.forEach(num => collectedNumbers.add(num));
-            }
-        });
-        
-        // Apply 6/9 swap rule
-        const numbersToSwap = Array.from(collectedNumbers);
-        numbersToSwap.forEach(num => {
-            const swappedNum = swapSixNine(num);
-            collectedNumbers.add(swappedNum);
-        });
-
-        // Format the unique collected numbers
-        const resultString = Array.from(collectedNumbers)
-            .sort((a, b) => a - b)
-            .map(n => String(n).padStart(2, '0'))
-            .join(', ');
-        
-        setPairedResults(resultString || 'No paired numbers found in VERIFIER_DATA.');
-        
-        // AUTOMATIC TRANSFER: If results are valid, transfer them to the Verifier input
-        if (resultString) {
-            onTransferToVerifier(resultString);
-            toast.success("Paired numbers generated and automatically transferred to Verifier Set A (Green). Matches will be checked automatically if Set B has numbers.");
-        } else {
-            onTransferToVerifier('');
-        }
-    };
-
     return (
         <Card className="w-full shadow-lg">
             <CardHeader>
@@ -216,31 +148,6 @@ export function Loto3Generator({ inputOverride, onTransferToVerifier }: Loto3Gen
                         ) : (
                             <p className="text-muted-foreground italic col-span-full">Enter numbers and click generate.</p>
                         )}
-                    </div>
-                </div>
-                
-                {/* Paired Numbers Section */}
-                <div className="pt-6 border-t space-y-4">
-                    <h3 className="text-lg font-semibold">Paired Numbers</h3>
-                    <div className="flex gap-2">
-                        <Input
-                            id="paired-input" 
-                            placeholder="e.g., 99 or 69"
-                            value={pairedInput}
-                            onChange={(e) => setPairedInput(e.target.value.replace(/\D/g, "").slice(0, 2))}
-                            className="w-24 text-center font-mono text-lg"
-                            maxLength={2}
-                        />
-                        <Button onClick={checkPairedNumbers} className="flex-grow">
-                            Check Paired
-                        </Button>
-                    </div>
-                    
-                    <div className="result pt-2 space-y-2">
-                        <h4 className="font-semibold mb-1">Paired Results:</h4>
-                        <div className="p-3 bg-muted/50 rounded-md break-all font-mono text-sm text-foreground">
-                            {pairedResults || 'Awaiting input...'}
-                        </div>
                     </div>
                 </div>
             </CardContent>
