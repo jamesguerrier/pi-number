@@ -42,13 +42,14 @@ export function DayCheckerTool() {
 
     const router = useRouter();
 
-    // Memoized set of all unique found numbers from the current results
+    // Memoized set of all unique numbers from the *historical arrays* where a match was found
     const allFoundNumbersInResults = useMemo(() => {
         if (!results) return new Set<number>();
         const collected = new Set<number>();
         results.forEach(dayResult => {
             dayResult.matches.forEach(match => {
-                match.foundNumbers.forEach(num => collected.add(num));
+                // Collect all numbers from the historical array itself
+                match.array.forEach(num => collected.add(num));
             });
         });
         return collected;
