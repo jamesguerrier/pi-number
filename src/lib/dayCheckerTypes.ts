@@ -7,6 +7,7 @@ export const DAY_COLOR_MAP = {
     'mercredi': { name: 'Wednesday', indicatorColor: '#d8bfd8', style: { backgroundColor: '#d8bfd8', borderColor: '#9400d3', color: '#4b0082', fontWeight: 'bold' } },
     'samedi': { name: 'Saturday', indicatorColor: '#ffa07a', style: { backgroundColor: '#ffa07a', borderColor: '#ff4500', color: '#8b0000', fontWeight: 'bold' } },
     'dimanche': { name: 'Sunday', indicatorColor: '#f0e68c', style: { backgroundColor: '#f0e68c', borderColor: '#daa520', color: '#8b4513', fontWeight: 'bold' } },
+    'verifier': { name: 'Verifier Match', indicatorColor: '#800080', style: { backgroundColor: '#e0b0ff', borderColor: '#800080', color: '#4b0082', fontWeight: 'bold' } }, // New entry for verifier
 };
 
 export type DayKey = keyof typeof DAY_COLOR_MAP;
@@ -21,8 +22,8 @@ export interface MatchDetail {
 }
 
 export interface DayMatchResult {
-    day: string; // French day name key
-    name: string; // English day name
+    day: string; // French day name key or 'verifier'
+    name: string; // English day name or 'Verifier Matches'
     indicatorColor: string;
     matches: MatchDetail[];
     totalArraysFound: number;
