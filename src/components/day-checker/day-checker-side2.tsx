@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { numberData } from '@/lib/data';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { DateInputSection } from '../date-input-section';
@@ -25,6 +24,11 @@ import { LocationLoadButtons } from './location-load-buttons';
 import { DayCheckerInputGrid } from './day-checker-input-grid';
 import { DayCheckerResultsDisplay } from './day-checker-results-display';
 import { DayCheckerSide2ActionButtons } from './day-checker-side2-action-buttons'; // New action buttons
+
+// Independent data for Side 2's "Search Matches" functionality
+const SIDE2_MATCH_DATA: number[][] = [
+    [20, 78, 83, 51], [21, 45, 36, 32], [22, 1, 68, 89], [23, 15, 48, 84], [24, 81, 38, 54], [25, 5, 6, 95], [26, 30, 59, 46], [27, 2, 62, 94], [14, 57, 87, 74], [28, 4, 79, 73], [29, 72, 34, 80], [31, 55, 69, 61], [33, 66, 76, 39], [71, 91, 63, 88], [92, 75, 56, 9], [12, 64, 86, 10], [82, 3, 43, 35], [16, 93, 53, 98], [96, 11, 44, 65], [42, 99, 97, 8], [19, 70, 58, 0], [17, 49, 67, 37], [18, 7, 52, 13], [90, 40, 47, 77], [85, 41, 50, 60], [21, 20, 23, 97]
+];
 
 // --- Component ---
 
@@ -124,7 +128,7 @@ export function DayCheckerSide2() {
         
         setHighlightedInputs(prev => {
             const newState = { ...prev };
-            newState[index] = null;
+            newState[index] = null; // Clear highlight for this input when it changes
             return newState;
         });
     };
@@ -137,110 +141,83 @@ export function DayCheckerSide2() {
 
     // New generic search function for Side 2
     const handleSearchMatches = () => {
-        const inputValuesWithIndices: { value: number, index: number }[] = inputs
-            .map((val, index) => ({ value: val.trim() === '' ? null : parseInt(val), index }))
-            .filter((item): item is { value: number, index: number } => item.value !== null && !isNaN(item.value));
+        setIsLoading(true);
+        setResults(null);
+        setHighlightedInputs({}); // Clear all highlights at the start of a new search
 
-        if (inputValuesWithIndices.length === 0) {
-            alert("Please enter at least one valid number (0-99).");
+        // Collect values and convert "00"-"09" to 0-9
+        const inputValuesWithIndices: { value: number, index: number }[] = inputs
+            .map((val, index) => {
+                let trimmedVal = val.trim();
+                if (trimmedVal === "") return null;
+                let parsedVal = parseInt(trimmedVal);
+                // Handle "00"-"09" to 0-9 conversion as per user's JS
+                if (trimmedVal.startsWith("0") && trimmedVal.length === 2) {
+                    parsedVal = parseInt(trimmedVal[1]);
+                }
+                return { value: parsedVal, index };
+            })
+            .filter((item): item is { value: number, index: number } => item !== null && !isNaN(item.value));
+
+        const inputNumbersOnly = inputValuesWithIndices.map(item => item.value);
+
+        if (inputNumbersOnly.length === 0) {
+            toast.info("Please enter at least one valid number (0-99).");
+            setIsLoading(false);
             return;
         }
 
-        setIsLoading(true);
-        setResults(null);
-        
+        // Count how many times each number appears in the user's inputs
+        const counts: Record<number, number> = {};
+        inputNumbersOnly.forEach(num => counts[num] = (counts[num] || 0) + 1);
+
+        const foundMatchesDetails: MatchDetail[] = [];
         const newHighlights: Record<number, string | null> = {};
-        const allDayMatches: Record<string, MatchDetail[]> = {}; // Group matches by day
 
-        // Initialize allDayMatches for all possible days
-        for (const dayKey in DAY_COLOR_MAP) {
-            allDayMatches[dayKey] = [];
-        }
+        for (const arr of SIDE2_MATCH_DATA) { // Use SIDE2_MATCH_DATA here
+            const matchesInArray = arr.filter(num => inputNumbersOnly.includes(num));
 
-        // Iterate through all input numbers
-        inputValuesWithIndices.forEach(inputItem => {
-            // Iterate through all sections (lunMar, marMer, etc.)
-            for (const sectionKey in numberData) {
-                const section = numberData[sectionKey as keyof typeof numberData];
+            // Check for repeated input numbers that match
+            const hasRepeatedInputMatch = matchesInArray.some(num => counts[num] >= 2);
 
-                // Iterate through all subsections (firstLM, secondLM, etc.)
-                for (const subsectionKey in section) {
-                    const subsection = section[subsectionKey as keyof typeof section];
-
-                    // Iterate through all days within the subsection (lundi, mardi, etc.)
-                    for (const dayKey in subsection) {
-                        const dayArray = subsection[dayKey as keyof typeof subsection] as number[];
-                        
-                        if (dayArray.includes(inputItem.value)) {
-                            // Match found for this input number in this day's array
-                            const dayName = dayKey; // French day name
-                            newHighlights[inputItem.index] = dayName;
-
-                            const matchDetail: MatchDetail = {
-                                array: dayArray,
-                                foundNumbers: [inputItem.value], // Only this input number was found
-                                location: `${sectionKey}.${subsectionKey}`,
-                                matchCount: 1,
-                                totalInArray: dayArray.length,
-                                percentage: Math.round((1 / dayArray.length) * 100),
-                            };
-                            allDayMatches[dayName].push(matchDetail);
-                        }
-                    }
-                }
-            }
-        });
-
-        // Consolidate and format results
-        const finalResults: DayMatchResult[] = [];
-        for (const dayKey in allDayMatches) {
-            const dayInfo = DAY_COLOR_MAP[dayKey as DayKey];
-            const matches = allDayMatches[dayKey];
-
-            if (matches.length > 0) {
-                // Further consolidate matches for the same day and array to avoid duplicates
-                const consolidatedMatchesMap = new Map<string, MatchDetail>(); // Key: array.join('-') + location
-
-                matches.forEach(match => {
-                    const key = `${match.array.join('-')}-${match.location}`;
-                    if (consolidatedMatchesMap.has(key)) {
-                        const existingMatch = consolidatedMatchesMap.get(key)!;
-                        if (!existingMatch.foundNumbers.includes(match.foundNumbers[0])) {
-                            existingMatch.foundNumbers.push(match.foundNumbers[0]);
-                            existingMatch.matchCount++;
-                            existingMatch.percentage = Math.round((existingMatch.matchCount / existingMatch.totalInArray) * 100);
-                        }
-                    } else {
-                        consolidatedMatchesMap.set(key, { ...match });
-                    }
+            // Matching criteria: If at least two different matches OR one match that appears twice or more among inputs
+            if (matchesInArray.length >= 2 || hasRepeatedInputMatch) {
+                const uniqueFoundNumbers = Array.from(new Set(matchesInArray)); // Ensure unique numbers for display
+                
+                foundMatchesDetails.push({
+                    array: arr,
+                    foundNumbers: uniqueFoundNumbers.sort((a, b) => a - b),
+                    location: "Side 2 Data", // Generic location for Side 2
+                    matchCount: uniqueFoundNumbers.length,
+                    totalInArray: arr.length,
+                    percentage: Math.round((uniqueFoundNumbers.length / arr.length) * 100),
                 });
 
-                const consolidatedMatches = Array.from(consolidatedMatchesMap.values());
-                consolidatedMatches.forEach(match => match.foundNumbers.sort((a, b) => a - b)); // Sort found numbers
-
-                finalResults.push({
-                    day: dayKey,
-                    name: dayInfo.name,
-                    indicatorColor: dayInfo.indicatorColor,
-                    matches: consolidatedMatches.sort((a, b) => b.matchCount - a.matchCount),
-                    totalArraysFound: consolidatedMatches.length,
-                    totalNumbersMatched: consolidatedMatches.reduce((sum, match) => sum + match.matchCount, 0),
+                // Highlight inputs that contributed to this match
+                inputValuesWithIndices.forEach(inputItem => {
+                    if (matchesInArray.includes(inputItem.value)) {
+                        newHighlights[inputItem.index] = 'verifier'; // Use 'verifier' key for highlighting
+                    }
                 });
             }
         }
-        
-        // Sort final results by day order
-        const dayOrder = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
-        finalResults.sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
 
+        const verifierDayMatchResult: DayMatchResult = {
+            day: 'verifier',
+            name: 'Verifier Matches',
+            indicatorColor: DAY_COLOR_MAP.verifier.indicatorColor,
+            matches: foundMatchesDetails.sort((a, b) => b.matchCount - a.matchCount), // Sort by match count
+            totalArraysFound: foundMatchesDetails.length,
+            totalNumbersMatched: foundMatchesDetails.reduce((sum, match) => sum + match.matchCount, 0),
+        };
 
         setTimeout(() => {
             setHighlightedInputs(newHighlights);
-            setResults(finalResults);
+            setResults(foundMatchesDetails.length > 0 ? [verifierDayMatchResult] : null);
             setIsLoading(false);
-            if (finalResults.length > 0) {
-                toast.success("Matches found!");
-            } else {
+            if (foundMatchesDetails.length > 0) {
+                toast.success(`Found ${foundMatchesDetails.length} match(es)!`);
+            } else if (inputNumbersOnly.length > 0) {
                 toast.info("No matches found for the entered numbers.");
             }
         }, 1000);
@@ -259,6 +236,7 @@ export function DayCheckerSide2() {
         toast.success(`Transferred ${allFoundNumbersInResults.size} number(s) to Verifier Set A (Green).`);
     };
 
+    // The totalSummary is now derived directly from the 'results' array
     const totalSummary = useMemo(() => {
         if (!results || results.length === 0) return null;
         
@@ -268,7 +246,7 @@ export function DayCheckerSide2() {
         // For Side 2, we don't have a fixed day1/day2, so we can just list all days found
         // Or, if we want to keep the structure, we can pick the first two days from results
         const day1Summary = results[0] || { name: '', totalArraysFound: 0, totalNumbersMatched: 0 };
-        const day2Summary = results[1] || { name: '', totalArraysFound: 0, totalNumbersMatched: 0 };
+        const day2Summary = results[1] || { name: '', totalArraysFound: 0, totalNumbersMatched: 0 }; // This will likely be empty or a placeholder
 
         return { totalArraysFound, totalNumbersMatched, day1: day1Summary, day2: day2Summary };
     }, [results]);
