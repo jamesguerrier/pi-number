@@ -1,6 +1,6 @@
 "use client"
 
-import * as React from "react"
+import React from "react" // Explicitly import React
 import Link, { LinkProps } from "next/link"
 import { useRouter } from "next/navigation"
 import { Menu } from "lucide-react"
@@ -45,7 +45,7 @@ function MobileLink({
       {...props}
     >
       {children}
-    </MobileLink>
+    </Link>
   )
 }
 
