@@ -16,7 +16,8 @@ const navItems = [
     { href: "/new-jersey", label: "New Jersey" },
     { href: "/georgia", label: "Georgia" },
     { href: "/verifier", label: "Verifier" },
-    { href: "/day-checker", label: "Day Checker" }, // Added new link
+    { href: "/day-checker", label: "Day Checker Boulette" }, // Updated link
+    { href: "/day-checker-side2", label: "Side 2" }, // New link for Side 2
 ]
 
 interface MobileLinkProps extends LinkProps {
@@ -44,7 +45,7 @@ function MobileLink({
       {...props}
     >
       {children}
-    </Link>
+    </MobileLink>
   )
 }
 
