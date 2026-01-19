@@ -187,9 +187,9 @@ export function DayCheckerTool() {
                                 // For handleSearchRange, all are 'strict' matches
                                 uniqueFoundNumbersMap.set(item.number, 'strict');
                             });
-                            const uniqueFoundNumbers: FoundNumberWithType[] = Array.from(uniqueFoundNumbersMap.entries())
-                                .map(([num, type]) => ({ number: num, type: type as 'strict' | 'reverse' })) // Explicit cast here
-                                .sort((a, b) => a.number - b.number);
+                            const uniqueFoundNumbers = Array.from(uniqueFoundNumbersMap.entries())
+                                .map(([num, type]) => ({ number: num, type }))
+                                .sort((a, b) => a.number - b.number) satisfies FoundNumberWithType[]; // Apply satisfies here
 
                             const matchCount = uniqueFoundNumbers.length;
                             const totalInArray = dayArray.length;
@@ -291,9 +291,9 @@ export function DayCheckerTool() {
                                 uniqueFoundNumbersMap.set(item.number, item.type);
                             }
                         });
-                        const uniqueFoundNumbers: FoundNumberWithType[] = Array.from(uniqueFoundNumbersMap.entries())
+                        const uniqueFoundNumbers = Array.from(uniqueFoundNumbersMap.entries())
                             .map(([num, type]) => ({ number: num, type }))
-                            .sort((a, b) => a.number - b.number); // Sort numerically
+                            .sort((a, b) => a.number - b.number) satisfies FoundNumberWithType[]; // Apply satisfies here
 
                         const matchCount = uniqueFoundNumbers.length;
                         const totalInArray = dayArray.length;
