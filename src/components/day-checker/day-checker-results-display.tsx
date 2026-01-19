@@ -8,11 +8,13 @@ import { DayMatchResult, DAY_COLOR_MAP } from '@/lib/dayCheckerTypes';
 interface DayCheckerResultsDisplayProps {
     isLoading: boolean;
     results: DayMatchResult[] | null;
+    // totalSummary now includes an array of all day summaries
     totalSummary: {
         totalArraysFound: number;
         totalNumbersMatched: number;
-        day1: DayMatchResult;
-        day2: DayMatchResult;
+        day1: { name: string; totalArraysFound: number; totalNumbersMatched: number; };
+        day2: { name: string; totalArraysFound: number; totalNumbersMatched: number; };
+        allDaySummaries?: { name: string; totalArraysFound: number; totalNumbersMatched: number; }[]; // Optional for backward compatibility
     } | null;
     allFoundNumbersInResults: Set<number>;
     handleTransferToVerifier: () => void;
@@ -31,7 +33,7 @@ export function DayCheckerResultsDisplay({
                 <div className="flex justify-center items-center h-full">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
-            ) : results && totalSummary ? (
+            ) : results && results.length > 0 ? (
                 <div className="space-y-4">
                     {results.map((dayResult, index) => (
                         <div key={index} className="day-section p-4 border-l-4 border-green-500 rounded-lg shadow-sm bg-card dark:bg-gray-900">
@@ -54,14 +56,35 @@ export function DayCheckerResultsDisplay({
                         </div>
                     ))}
                     
-                    {/* Summary */}
-                    <div className="match-info p-3 rounded-lg mt-4 border-l-4 border-purple-500 bg-muted/50">
-                        <div className="match-numbers font-bold text-foreground">Summary:</div>
-                        <div className="match-location text-sm text-muted-foreground">Total arrays with matches: {totalSummary.totalArraysFound}</div>
-                        <div className="match-location text-sm text-muted-foreground">Total numbers matched: {totalSummary.totalNumbersMatched}</div>
-                        <div className="match-location text-sm text-muted-foreground">{totalSummary.day1.name}: {totalSummary.day1.totalArraysFound} arrays ({totalSummary.day1.totalNumbersMatched} numbers)</div>
-                        <div className="match-location text-sm text-muted-foreground">{totalSummary.day2.name}: {totalSummary.day2.totalArraysFound} arrays ({totalSummary.day2.totalNumbersMatched} numbers)</div>
-                    </div>
+                    {/* Dynamic Summary Section */}
+                    {totalSummary && (
+                        <div className="match-info p-3 rounded-lg mt-4 border-l-4 border-purple-500 bg-muted/50">
+                            <div className="match-numbers font-bold text-foreground">Summary:</div>
+                            <div className="match-location text-sm text-muted-foreground">Total arrays with matches: {totalSummary.totalArraysFound}</div>
+                            <div className="match-location text-sm text-muted-foreground">Total numbers matched: {totalSummary.totalNumbersMatched}</div>
+                            {/* Iterate over allDaySummaries if available, otherwise fallback to day1/day2 */}
+                            {totalSummary.allDaySummaries && totalSummary.allDaySummaries.length > 0 ? (
+                                totalSummary.allDaySummaries.map((daySummary, index) => (
+                                    <div key={`summary-${index}`} className="match-location text-sm text-muted-foreground">
+                                        {daySummary.name}: {daySummary.totalArraysFound} arrays ({daySummary.totalNumbersMatched} numbers)
+                                    </div>
+                                ))
+                            ) : (
+                                <>
+                                    {totalSummary.day1.name && (
+                                        <div className="match-location text-sm text-muted-foreground">
+                                            {totalSummary.day1.name}: {totalSummary.day1.totalArraysFound} arrays ({totalSummary.day1.totalNumbersMatched} numbers)
+                                        </div>
+                                    )}
+                                    {totalSummary.day2.name && (
+                                        <div className="match-location text-sm text-muted-foreground">
+                                            {totalSummary.day2.name}: {totalSummary.day2.totalArraysFound} arrays ({totalSummary.day2.totalNumbersMatched} numbers)
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    )}
 
                     {/* New Transfer Button */}
                     <div className="mt-6">

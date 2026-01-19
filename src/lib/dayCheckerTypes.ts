@@ -7,7 +7,16 @@ export const DAY_COLOR_MAP = {
     'mercredi': { name: 'Wednesday', indicatorColor: '#d8bfd8', style: { backgroundColor: '#d8bfd8', borderColor: '#9400d3', color: '#4b0082', fontWeight: 'bold' } },
     'samedi': { name: 'Saturday', indicatorColor: '#ffa07a', style: { backgroundColor: '#ffa07a', borderColor: '#ff4500', color: '#8b0000', fontWeight: 'bold' } },
     'dimanche': { name: 'Sunday', indicatorColor: '#f0e68c', style: { backgroundColor: '#f0e68c', borderColor: '#daa520', color: '#8b4513', fontWeight: 'bold' } },
-    'verifier': { name: 'Verifier Match', indicatorColor: '#800080', style: { backgroundColor: '#e0b0ff', borderColor: '#800080', color: '#4b0082', fontWeight: 'bold' } }, // New entry for verifier
+    'verifier': { name: 'Verifier Match', indicatorColor: '#800080', style: { backgroundColor: '#e0b0ff', borderColor: '#800080', color: '#4b0082', fontWeight: 'bold' } },
+
+    // New entries for reverse-only matches
+    'lundi_reverse': { name: 'Monday (Reverse)', indicatorColor: '#c8e6c9', style: { backgroundColor: '#c8e6c9', borderColor: '#4caf50', color: '#1b5e20', fontWeight: 'bold' } },
+    'mardi_reverse': { name: 'Tuesday (Reverse)', indicatorColor: '#ffe0e6', style: { backgroundColor: '#ffe0e6', borderColor: '#ff80ab', color: '#c2185b', fontWeight: 'bold' } },
+    'mercredi_reverse': { name: 'Wednesday (Reverse)', indicatorColor: '#e6e0e6', style: { backgroundColor: '#e6e0e6', borderColor: '#ba68c8', color: '#6a1b9a', fontWeight: 'bold' } },
+    'jeudi_reverse': { name: 'Thursday (Reverse)', indicatorColor: '#e0f2f7', style: { backgroundColor: '#e0f2f7', borderColor: '#4fc3f7', color: '#0277bd', fontWeight: 'bold' } },
+    'vendredi_reverse': { name: 'Friday (Reverse)', indicatorColor: '#fff8e1', style: { backgroundColor: '#fff8e1', borderColor: '#ffca28', color: '#ffa000', fontWeight: 'bold' } },
+    'samedi_reverse': { name: 'Saturday (Reverse)', indicatorColor: '#ffe0b2', style: { backgroundColor: '#ffe0b2', borderColor: '#ff8a65', color: '#e64a19', fontWeight: 'bold' } },
+    'dimanche_reverse': { name: 'Sunday (Reverse)', indicatorColor: '#fff9c4', style: { backgroundColor: '#fff9c4', borderColor: '#ffeb3b', color: '#fbc02d', fontWeight: 'bold' } },
 };
 
 export type DayKey = keyof typeof DAY_COLOR_MAP;

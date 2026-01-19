@@ -3,12 +3,13 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { numberData } from '@/lib/data';
+import { numberData, getEnglishDayName } from '@/lib/data'; // Import getEnglishDayName
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { DateInputSection } from './date-input-section';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { reverseNumber } from '@/lib/utils'; // Import reverseNumber
 
 // Import shared types and constants
 import {
@@ -28,6 +29,7 @@ import { LocationLoadButtons } from './day-checker/location-load-buttons';
 import { DayCheckerInputGrid } from './day-checker/day-checker-input-grid';
 import { DayCheckerActionButtons } from './day-checker/day-checker-action-buttons';
 import { DayCheckerResultsDisplay } from './day-checker/day-checker-results-display';
+import { Button } from './ui/button'; // Ensure Button is imported
 
 // --- Component ---
 
@@ -149,7 +151,7 @@ export function DayCheckerTool() {
         }
 
         setIsLoading(true);
-        setResults(null);
+        setResults(null); // Clear previous results
         
         const newHighlights: Record<number, string | null> = {};
         const inputSet = new Set(inputValuesWithIndices.map(i => i.value));
@@ -223,6 +225,80 @@ export function DayCheckerTool() {
             setIsLoading(false);
         }, 1000);
     };
+
+    const handleSearchSingleDayReverseOnly = (frenchDay: string) => {
+        const inputValuesWithIndices: { value: number, index: number }[] = inputs
+            .map((val, index) => ({ value: val.trim() === '' ? null : parseInt(val), index }))
+            .filter((item): item is { value: number, index: number } => item.value !== null && !isNaN(item.value));
+
+        if (inputValuesWithIndices.length === 0) {
+            alert("Please enter at least one valid number (0-99).");
+            return;
+        }
+
+        setIsLoading(true);
+        setResults(null); // Clear previous results
+        
+        const newHighlights: Record<number, string | null> = {};
+        const allMatches: MatchDetail[] = [];
+        
+        const dayKey = frenchDay as keyof typeof numberData;
+        const reverseDayKey = `${frenchDay}_reverse` as DayKey; // e.g., 'lundi_reverse'
+        const dayInfo = DAY_COLOR_MAP[reverseDayKey];
+
+        for (const sectionKey in numberData) {
+            const section = numberData[sectionKey as keyof typeof numberData];
+
+            for (const subsectionKey in section) {
+                const subsection = section[subsectionKey as keyof typeof section];
+
+                if (subsection[dayKey as keyof typeof subsection]) {
+                    const dayArray = subsection[dayKey as keyof typeof subsection] as number[];
+                    const foundInArray: number[] = [];
+
+                    inputValuesWithIndices.forEach(inputItem => {
+                        const reversedInput = reverseNumber(inputItem.value);
+                        if (dayArray.includes(reversedInput)) {
+                            foundInArray.push(inputItem.value); // Store the original input number
+                            newHighlights[inputItem.index] = reverseDayKey;
+                        }
+                    });
+
+                    if (foundInArray.length > 0) {
+                        const uniqueFoundNumbers = Array.from(new Set(foundInArray));
+                        const matchCount = uniqueFoundNumbers.length;
+                        const totalInArray = dayArray.length;
+                        const percentage = Math.round((matchCount / totalInArray) * 100);
+
+                        allMatches.push({
+                            array: dayArray,
+                            foundNumbers: uniqueFoundNumbers,
+                            location: `${sectionKey}.${subsectionKey}`,
+                            matchCount,
+                            totalInArray,
+                            percentage,
+                        });
+                    }
+                }
+            }
+        }
+        allMatches.sort((a, b) => b.matchCount - a.matchCount);
+
+        const finalResult: DayMatchResult = {
+            day: reverseDayKey,
+            name: dayInfo.name,
+            indicatorColor: dayInfo.indicatorColor,
+            matches: allMatches,
+            totalArraysFound: allMatches.length,
+            totalNumbersMatched: allMatches.reduce((sum, match) => sum + match.matchCount, 0),
+        };
+
+        setTimeout(() => {
+            setHighlightedInputs(newHighlights);
+            setResults([finalResult]); // Set results to only this single day's result
+            setIsLoading(false);
+        }, 1000);
+    };
     
     const handleTransferToVerifier = () => {
         if (allFoundNumbersInResults.size === 0) {
@@ -238,15 +314,23 @@ export function DayCheckerTool() {
     };
 
     const totalSummary = useMemo(() => {
-        if (!results) return null;
+        if (!results || results.length === 0) return null;
         
-        const day1 = results[0];
-        const day2 = results[1];
-        
-        const totalArraysFound = day1.totalArraysFound + day2.totalArraysFound;
-        const totalNumbersMatched = day1.totalNumbersMatched + day2.totalNumbersMatched;
+        const totalArraysFound = results.reduce((sum, r) => sum + r.totalArraysFound, 0);
+        const totalNumbersMatched = results.reduce((sum, r) => sum + r.totalNumbersMatched, 0);
 
-        return { totalArraysFound, totalNumbersMatched, day1, day2 };
+        // Dynamically create day summaries based on available results
+        const daySummaries = results.map(r => ({
+            name: r.name,
+            totalArraysFound: r.totalArraysFound,
+            totalNumbersMatched: r.totalNumbersMatched,
+        }));
+
+        // Provide placeholders for day1/day2 if fewer than two results exist
+        const day1 = daySummaries[0] || { name: '', totalArraysFound: 0, totalNumbersMatched: 0 };
+        const day2 = daySummaries[1] || { name: '', totalArraysFound: 0, totalNumbersMatched: 0 };
+
+        return { totalArraysFound, totalNumbersMatched, day1, day2, allDaySummaries: daySummaries };
     }, [results]);
 
     return (
@@ -277,6 +361,26 @@ export function DayCheckerTool() {
                         handleSearchRange={handleSearchRange}
                         handleClearAll={handleClearAll}
                     />
+
+                    {/* New Section for Single Day Reverse Only Buttons */}
+                    <div className="pt-4 border-t mt-6 space-y-4">
+                        <h3 className="text-lg font-semibold text-center text-gray-700 dark:text-gray-300">
+                            Single Day Reverse Matches Only
+                        </h3>
+                        <div className="flex flex-wrap gap-3 justify-center">
+                            {['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'].map((day) => (
+                                <Button
+                                    key={day}
+                                    onClick={() => handleSearchSingleDayReverseOnly(day)}
+                                    className={buttonBaseClasses}
+                                    style={DAY_COLOR_MAP[`${day}_reverse` as DayKey].style}
+                                    disabled={isLoading}
+                                >
+                                    {getEnglishDayName(day)} (Reverse)
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
                     
                     <DayCheckerResultsDisplay
                         isLoading={isLoading}
