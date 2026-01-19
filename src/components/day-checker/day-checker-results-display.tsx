@@ -3,8 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Send } from 'lucide-react';
-import { DayMatchResult, DAY_COLOR_MAP, FoundNumberWithType } from '@/lib/dayCheckerTypes'; // Import FoundNumberWithType
-import { cn } from '@/lib/utils'; // Import cn for conditional classnames
+import { DayMatchResult, DAY_COLOR_MAP } from '@/lib/dayCheckerTypes';
 
 interface DayCheckerResultsDisplayProps {
     isLoading: boolean;
@@ -46,24 +45,9 @@ export function DayCheckerResultsDisplay({
                                 dayResult.matches.map((match, matchIndex) => (
                                     <div key={matchIndex} className="match-info p-3 rounded-lg mt-2 border-l-4 border-blue-500 bg-muted/50">
                                         <div className="match-numbers font-bold text-foreground">Array: [{match.array.map(n => String(n).padStart(2, '0')).join(', ')}]</div>
-                                        <div className="match-numbers">
-                                            Found {match.foundNumbers.length}/{match.totalInArray} numbers: [
-                                            {match.foundNumbers.map((foundNum: FoundNumberWithType, i: number) => (
-                                                <span
-                                                    key={i}
-                                                    className={cn(
-                                                        "font-bold",
-                                                        foundNum.type === 'strict' ? "text-red-500" : "text-blue-500"
-                                                    )}
-                                                >
-                                                    {String(foundNum.number).padStart(2, '0')}
-                                                    {i < match.foundNumbers.length - 1 ? ', ' : ''}
-                                                </span>
-                                            ))}
-                                            ]
-                                        </div>
+                                        <div className="match-numbers">Found {match.matchCount}/{match.totalInArray} numbers: [{match.foundNumbers.map(n => String(n).padStart(2, '0')).join(', ')}]</div>
                                         <div className="match-location text-sm text-muted-foreground">Location: {match.location}</div>
-                                        <div className="match-location text-sm text-muted-foreground">Match: {match.percentage}% ({match.foundNumbers.length} of {match.totalInArray})</div>
+                                        <div className="match-location text-sm text-muted-foreground">Match: {match.percentage}% ({match.matchCount} of {match.totalInArray})</div>
                                     </div>
                                 ))
                             ) : (
