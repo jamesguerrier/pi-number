@@ -187,9 +187,13 @@ export function DayCheckerTool() {
                                 // For handleSearchRange, all are 'strict' matches
                                 uniqueFoundNumbersMap.set(item.number, 'strict');
                             });
-                            const uniqueFoundNumbers = Array.from(uniqueFoundNumbersMap.entries())
-                                .map(([num, type]) => ({ number: num, type }))
-                                .sort((a, b) => a.number - b.number) satisfies FoundNumberWithType[]; // Apply satisfies here
+                            // FIX: Explicitly type the uniqueFoundNumbers variable and assert type
+                            const uniqueFoundNumbers: FoundNumberWithType[] = Array.from(uniqueFoundNumbersMap.entries())
+                                .map(([num, type]) => ({
+                                    number: num,
+                                    type: type as "strict" | "reverse",
+                                }))
+                                .sort((a, b) => a.number - b.number);
 
                             const matchCount = uniqueFoundNumbers.length;
                             const totalInArray = dayArray.length;
@@ -291,9 +295,13 @@ export function DayCheckerTool() {
                                 uniqueFoundNumbersMap.set(item.number, item.type);
                             }
                         });
-                        const uniqueFoundNumbers = Array.from(uniqueFoundNumbersMap.entries())
-                            .map(([num, type]) => ({ number: num, type }))
-                            .sort((a, b) => a.number - b.number) satisfies FoundNumberWithType[]; // Apply satisfies here
+                        // FIX: Explicitly type the uniqueFoundNumbers variable and assert type
+                        const uniqueFoundNumbers: FoundNumberWithType[] = Array.from(uniqueFoundNumbersMap.entries())
+                            .map(([num, type]) => ({
+                                number: num,
+                                type: type as "strict" | "reverse",
+                            }))
+                            .sort((a, b) => a.number - b.number);
 
                         const matchCount = uniqueFoundNumbers.length;
                         const totalInArray = dayArray.length;
