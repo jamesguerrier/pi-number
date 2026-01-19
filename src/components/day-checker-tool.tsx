@@ -188,12 +188,16 @@ export function DayCheckerTool() {
                                 uniqueFoundNumbersMap.set(item.number, 'strict');
                             });
                             const uniqueFoundNumbers: FoundNumberWithType[] = Array.from(uniqueFoundNumbersMap.entries())
-                                .map(([num, type]) => ({ number: num, type }))
+                                .map(([num, type]) => ({ number: num, type: type as 'strict' | 'reverse' })) // Explicit cast here
                                 .sort((a, b) => a.number - b.number);
+
+                            const matchCount = uniqueFoundNumbers.length;
+                            const totalInArray = dayArray.length;
+                            const percentage = Math.round((matchCount / totalInArray) * 100);
 
                             allMatches[dayName].push({
                                 array: dayArray,
-                                foundNumbers: uniqueFoundNumbers, // <--- Error here
+                                foundNumbers: uniqueFoundNumbers,
                                 location: `${sectionKey}.${subsectionKey}`,
                                 matchCount,
                                 totalInArray,
