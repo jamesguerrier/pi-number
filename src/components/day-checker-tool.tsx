@@ -187,7 +187,7 @@ export function DayCheckerTool() {
                                 // For handleSearchRange, all are 'strict' matches
                                 uniqueFoundNumbersMap.set(item.number, 'strict');
                             });
-                            // FIX: Explicitly type the uniqueFoundNumbers variable and assert type
+                            // Explicitly type the uniqueFoundNumbers variable and assert type
                             const uniqueFoundNumbers: FoundNumberWithType[] = Array.from(uniqueFoundNumbersMap.entries())
                                 .map(([num, type]) => ({
                                     number: num,
@@ -295,7 +295,7 @@ export function DayCheckerTool() {
                                 uniqueFoundNumbersMap.set(item.number, item.type);
                             }
                         });
-                        // FIX: Explicitly type the uniqueFoundNumbers variable and assert type
+                        // Explicitly type the uniqueFoundNumbers variable and assert type
                         const uniqueFoundNumbers: FoundNumberWithType[] = Array.from(uniqueFoundNumbersMap.entries())
                             .map(([num, type]) => ({
                                 number: num,
