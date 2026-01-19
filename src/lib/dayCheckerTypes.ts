@@ -21,9 +21,14 @@ export const DAY_COLOR_MAP = {
 
 export type DayKey = keyof typeof DAY_COLOR_MAP;
 
+export interface FoundNumberWithType {
+    number: number;
+    type: 'strict' | 'reverse';
+}
+
 export interface MatchDetail {
     array: number[];
-    foundNumbers: number[];
+    foundNumbers: FoundNumberWithType[]; // Changed to array of objects
     location: string;
     matchCount: number;
     totalInArray: number;

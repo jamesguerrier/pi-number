@@ -22,6 +22,7 @@ import {
     buttonBaseClasses,
     primaryButtonStyles,
     clearButtonStyles,
+    FoundNumberWithType, // Import the new type
 } from '@/lib/dayCheckerTypes';
 
 // Import new sub-components
@@ -172,17 +173,17 @@ export function DayCheckerTool() {
 
                     if (subsection[dayKey as keyof typeof subsection]) {
                         const dayArray = subsection[dayKey as keyof typeof subsection] as number[];
-                        const foundInArray: number[] = [];
+                        const foundInArray: FoundNumberWithType[] = []; // Use new type
 
                         inputValuesWithIndices.forEach(inputItem => {
                             if (dayArray.includes(inputItem.value)) {
-                                foundInArray.push(inputItem.value);
+                                foundInArray.push({ number: inputItem.value, type: 'strict' });
                                 newHighlights[inputItem.index] = dayName;
                             }
                         });
 
                         if (foundInArray.length > 0) {
-                            const uniqueFoundNumbers = Array.from(new Set(foundInArray));
+                            const uniqueFoundNumbers = Array.from(new Set(foundInArray.map(f => f.number))).map(num => ({ number: num, type: 'strict' }));
                             const matchCount = uniqueFoundNumbers.length;
                             const totalInArray = dayArray.length;
                             const percentage = Math.round((matchCount / totalInArray) * 100);
@@ -226,7 +227,7 @@ export function DayCheckerTool() {
         }, 1000);
     };
 
-    const handleSearchSingleDayReverseOnly = (frenchDay: string) => {
+    const handleSearchSingleDayBothMatches = (frenchDay: string) => { // Renamed function
         const inputValuesWithIndices: { value: number, index: number }[] = inputs
             .map((val, index) => ({ value: val.trim() === '' ? null : parseInt(val), index }))
             .filter((item): item is { value: number, index: number } => item.value !== null && !isNaN(item.value));
@@ -243,8 +244,8 @@ export function DayCheckerTool() {
         const allMatches: MatchDetail[] = [];
         
         const dayKey = frenchDay as keyof typeof numberData;
-        const reverseDayKey = `${frenchDay}_reverse` as DayKey; // e.g., 'lundi_reverse'
-        const dayInfo = DAY_COLOR_MAP[reverseDayKey];
+        const dayInfo = DAY_COLOR_MAP[frenchDay as DayKey]; // Use base day info for the overall result
+        const reverseDayKey = `${frenchDay}_reverse` as DayKey; // For highlighting reverse matches
 
         for (const sectionKey in numberData) {
             const section = numberData[sectionKey as keyof typeof numberData];
@@ -254,18 +255,39 @@ export function DayCheckerTool() {
 
                 if (subsection[dayKey as keyof typeof subsection]) {
                     const dayArray = subsection[dayKey as keyof typeof subsection] as number[];
-                    const foundInArray: number[] = [];
+                    const foundInArray: FoundNumberWithType[] = [];
 
                     inputValuesWithIndices.forEach(inputItem => {
+                        const isStrictMatch = dayArray.includes(inputItem.value);
                         const reversedInput = reverseNumber(inputItem.value);
-                        if (dayArray.includes(reversedInput)) {
-                            foundInArray.push(inputItem.value); // Store the original input number
-                            newHighlights[inputItem.index] = reverseDayKey;
+                        const isReverseMatch = dayArray.includes(reversedInput);
+
+                        if (isStrictMatch) {
+                            foundInArray.push({ number: inputItem.value, type: 'strict' });
+                            // Prioritize strict match for input highlight
+                            newHighlights[inputItem.index] = frenchDay; 
+                        } else if (isReverseMatch) {
+                            foundInArray.push({ number: inputItem.value, type: 'reverse' });
+                            // Only highlight with reverse style if no strict match
+                            if (!newHighlights[inputItem.index]) {
+                                newHighlights[inputItem.index] = reverseDayKey;
+                            }
                         }
                     });
 
                     if (foundInArray.length > 0) {
-                        const uniqueFoundNumbers = Array.from(new Set(foundInArray));
+                        // Filter unique numbers, but keep their types
+                        const uniqueFoundNumbersMap = new Map<number, 'strict' | 'reverse'>();
+                        foundInArray.forEach(item => {
+                            // If a number is found both strictly and in reverse, prioritize strict for the display type
+                            if (!uniqueFoundNumbersMap.has(item.number) || uniqueFoundNumbersMap.get(item.number) === 'reverse') {
+                                uniqueFoundNumbersMap.set(item.number, item.type);
+                            }
+                        });
+                        const uniqueFoundNumbers: FoundNumberWithType[] = Array.from(uniqueFoundNumbersMap.entries())
+                            .map(([num, type]) => ({ number: num, type }))
+                            .sort((a, b) => a.number - b.number); // Sort numerically
+
                         const matchCount = uniqueFoundNumbers.length;
                         const totalInArray = dayArray.length;
                         const percentage = Math.round((matchCount / totalInArray) * 100);
@@ -285,9 +307,9 @@ export function DayCheckerTool() {
         allMatches.sort((a, b) => b.matchCount - a.matchCount);
 
         const finalResult: DayMatchResult = {
-            day: reverseDayKey,
-            name: dayInfo.name,
-            indicatorColor: dayInfo.indicatorColor,
+            day: frenchDay, // Use the base day key
+            name: dayInfo.name + " (Strict & Reverse)", // Indicate both types of matches
+            indicatorColor: dayInfo.indicatorColor, // Use the base day color for the overall result card
             matches: allMatches,
             totalArraysFound: allMatches.length,
             totalNumbersMatched: allMatches.reduce((sum, match) => sum + match.matchCount, 0),
@@ -362,21 +384,21 @@ export function DayCheckerTool() {
                         handleClearAll={handleClearAll}
                     />
 
-                    {/* New Section for Single Day Reverse Only Buttons */}
+                    {/* New Section for Single Day Strict & Reverse Matches */}
                     <div className="pt-4 border-t mt-6 space-y-4">
                         <h3 className="text-lg font-semibold text-center text-gray-700 dark:text-gray-300">
-                            Single Day Reverse Matches Only
+                            Single Day Strict & Reverse Matches
                         </h3>
                         <div className="flex flex-wrap gap-3 justify-center">
                             {['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'].map((day) => (
                                 <Button
                                     key={day}
-                                    onClick={() => handleSearchSingleDayReverseOnly(day)}
+                                    onClick={() => handleSearchSingleDayBothMatches(day)} // Updated to new function
                                     className={buttonBaseClasses}
-                                    style={DAY_COLOR_MAP[`${day}_reverse` as DayKey].style}
+                                    style={DAY_COLOR_MAP[day as DayKey].style} // Use base day style for button
                                     disabled={isLoading}
                                 >
-                                    {getEnglishDayName(day)} (Reverse)
+                                    {getEnglishDayName(day)} (Both)
                                 </Button>
                             ))}
                         </div>
