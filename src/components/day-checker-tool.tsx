@@ -155,8 +155,6 @@ export function DayCheckerTool() {
         setResults(null); // Clear previous results
         
         const newHighlights: Record<number, string | null> = {};
-        const inputSet = new Set(inputValuesWithIndices.map(i => i.value));
-
         const allMatches: Record<string, MatchDetail[]> = {
             [day1]: [],
             [day2]: [],
@@ -173,24 +171,29 @@ export function DayCheckerTool() {
 
                     if (subsection[dayKey as keyof typeof subsection]) {
                         const dayArray = subsection[dayKey as keyof typeof subsection] as number[];
-                        const foundInArray: FoundNumberWithType[] = []; // Use new type
+                        const foundInArray: FoundNumberWithType[] = []; // Correctly typed
 
                         inputValuesWithIndices.forEach(inputItem => {
                             if (dayArray.includes(inputItem.value)) {
-                                foundInArray.push({ number: inputItem.value, type: 'strict' });
+                                foundInArray.push({ number: inputItem.value, type: 'strict' }); // Correct literal type
                                 newHighlights[inputItem.index] = dayName;
                             }
                         });
 
                         if (foundInArray.length > 0) {
-                            const uniqueFoundNumbers = Array.from(new Set(foundInArray.map(f => f.number))).map(num => ({ number: num, type: 'strict' }));
-                            const matchCount = uniqueFoundNumbers.length;
-                            const totalInArray = dayArray.length;
-                            const percentage = Math.round((matchCount / totalInArray) * 100);
+                            // Filter unique numbers, but keep their types
+                            const uniqueFoundNumbersMap = new Map<number, 'strict' | 'reverse'>();
+                            foundInArray.forEach(item => {
+                                // For handleSearchRange, all are 'strict' matches
+                                uniqueFoundNumbersMap.set(item.number, 'strict');
+                            });
+                            const uniqueFoundNumbers: FoundNumberWithType[] = Array.from(uniqueFoundNumbersMap.entries())
+                                .map(([num, type]) => ({ number: num, type }))
+                                .sort((a, b) => a.number - b.number);
 
                             allMatches[dayName].push({
                                 array: dayArray,
-                                foundNumbers: uniqueFoundNumbers,
+                                foundNumbers: uniqueFoundNumbers, // <--- Error here
                                 location: `${sectionKey}.${subsectionKey}`,
                                 matchCount,
                                 totalInArray,
